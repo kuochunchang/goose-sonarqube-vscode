@@ -14,7 +14,9 @@ export async function openGitChangePanel(context: vscode.ExtensionContext): Prom
     // Get workspace folder
     const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
     if (!workspaceFolder) {
-      vscode.window.showErrorMessage("No workspace folder found. Please open a folder first.");
+      await vscode.window.showErrorMessage(
+        "No workspace folder found. Please open a folder first."
+      );
       return;
     }
 
@@ -27,6 +29,6 @@ export async function openGitChangePanel(context: vscode.ExtensionContext): Prom
     });
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
-    vscode.window.showErrorMessage(`Failed to open Git Change Panel: ${errorMessage}`);
+    await vscode.window.showErrorMessage(`Failed to open Git Change Panel: ${errorMessage}`);
   }
 }

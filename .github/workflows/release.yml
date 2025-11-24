@@ -47,3 +47,4 @@ jobs:
         if: github.event_name == 'release'
         run: npx @vscode/vsce publish -p ${{ secrets.VSCE_PAT }}
 
+
