@@ -1,0 +1,199 @@
+{
+    "name": "goose-sonarqube-vscode",
+    "displayName": "Goose SonarQube",
+    "description": "SonarQube integration and Git change analysis for VS Code",
+    "version": "1.0.0",
+    "publisher": "kuochunchang",
+    "engines": {
+        "vscode": "^1.85.0"
+    },
+    "categories": [
+        "Linters",
+        "Other"
+    ],
+    "keywords": [
+        "sonarqube",
+        "code-quality",
+        "git",
+        "analysis",
+        "code-review"
+    ],
+    "activationEvents": [
+        "onStartupFinished"
+    ],
+    "main": "./dist/extension.js",
+    "contributes": {
+        "commands": [
+            {
+                "command": "gooseSonarQube.analyzeWorkingDirectory",
+                "title": "Analyze Working Directory Changes",
+                "category": "Goose SonarQube",
+                "icon": "$(git-commit)"
+            },
+            {
+                "command": "gooseSonarQube.analyzeBranch",
+                "title": "Analyze Branch Comparison",
+                "category": "Goose SonarQube",
+                "icon": "$(git-compare)"
+            },
+            {
+                "command": "gooseSonarQube.analyzePullRequest",
+                "title": "Analyze Pull Request",
+                "category": "Goose SonarQube",
+                "icon": "$(git-pull-request)"
+            },
+            {
+                "command": "gooseSonarQube.openGitChangePanel",
+                "title": "Open Git Change Analysis",
+                "category": "Goose SonarQube",
+                "icon": "$(git-pull-request)"
+            },
+            {
+                "command": "gooseSonarQube.showGitAnalysisMenu",
+                "title": "Git Analysis Menu",
+                "category": "Goose SonarQube"
+            },
+            {
+                "command": "gooseSonarQube.addConnection",
+                "title": "Add SonarQube Connection",
+                "category": "Goose SonarQube",
+                "icon": "$(add)"
+            },
+            {
+                "command": "gooseSonarQube.bindProject",
+                "title": "Bind to SonarQube Project",
+                "category": "Goose SonarQube",
+                "icon": "$(link)"
+            },
+            {
+                "command": "gooseSonarQube.testConnection",
+                "title": "Test SonarQube Connection",
+                "category": "Goose SonarQube",
+                "icon": "$(check)"
+            },
+            {
+                "command": "gooseSonarQube.diagnose",
+                "title": "Diagnose SonarQube Integration",
+                "category": "Goose SonarQube",
+                "icon": "$(pulse)"
+            },
+            {
+                "command": "gooseSonarQube.analyzeProject",
+                "title": "Analyze Project with SonarQube",
+                "category": "Goose SonarQube",
+                "icon": "$(search)"
+            }
+        ],
+        "keybindings": [
+            {
+                "command": "gooseSonarQube.openGitChangePanel",
+                "key": "ctrl+shift+g",
+                "mac": "cmd+shift+g"
+            }
+        ],
+        "menus": {
+            "scm/title": [
+                {
+                    "command": "gooseSonarQube.showGitAnalysisMenu",
+                    "group": "navigation",
+                    "when": "scmProvider == git"
+                }
+            ]
+        },
+        "configuration": {
+            "title": "Goose SonarQube",
+            "properties": {
+                "gooseSonarQube.connections": {
+                    "type": "array",
+                    "default": [],
+                    "markdownDescription": "Configure SonarQube/SonarCloud connections",
+                    "scope": "application",
+                    "items": {
+                        "type": "object",
+                        "required": [
+                            "connectionId",
+                            "serverUrl"
+                        ],
+                        "properties": {
+                            "connectionId": {
+                                "type": "string",
+                                "description": "Unique connection identifier"
+                            },
+                            "serverUrl": {
+                                "type": "string",
+                                "description": "SonarQube server URL"
+                            },
+                            "organizationKey": {
+                                "type": "string",
+                                "description": "Organization key (required for SonarCloud)"
+                            },
+                            "disableTelemetry": {
+                                "type": "boolean",
+                                "default": false,
+                                "description": "Disable telemetry for this connection"
+                            }
+                        }
+                    }
+                },
+                "gooseSonarQube.projectBinding": {
+                    "type": "object",
+                    "default": null,
+                    "markdownDescription": "Bind workspace to a SonarQube project",
+                    "scope": "resource",
+                    "properties": {
+                        "connectionId": {
+                            "type": "string",
+                            "description": "Connection ID from connections"
+                        },
+                        "projectKey": {
+                            "type": "string",
+                            "description": "SonarQube project key"
+                        },
+                        "projectName": {
+                            "type": "string",
+                            "description": "Project display name"
+                        }
+                    }
+                },
+                "gooseSonarQube.timeout": {
+                    "type": "number",
+                    "default": 3000,
+                    "minimum": 1000,
+                    "maximum": 30000,
+                    "description": "SonarQube connection timeout in milliseconds",
+                    "scope": "application"
+                },
+                "gooseSonarQube.enabled": {
+                    "type": "boolean",
+                    "default": true,
+                    "description": "Enable SonarQube integration",
+                    "scope": "application"
+                }
+            }
+        }
+    },
+    "scripts": {
+        "build": "tsc",
+        "watch": "tsc --watch",
+        "package": "vsce package",
+        "test": "vitest run"
+    },
+    "dependencies": {
+        "@octokit/rest": "^22.0.1",
+        "gpt-3-encoder": "^1.1.4",
+        "simple-git": "^3.19.0",
+        "sonarqube-scanner": "^4.3.2"
+    },
+    "devDependencies": {
+        "@types/node": "^20.0.0",
+        "@types/vscode": "^1.85.0",
+        "@vscode/vsce": "^2.22.0",
+        "typescript": "^5.3.2",
+        "vitest": "^1.0.0"
+    },
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/kuochunchang/goose-sonarqube-vscode.git"
+    },
+    "license": "MIT"
+}
