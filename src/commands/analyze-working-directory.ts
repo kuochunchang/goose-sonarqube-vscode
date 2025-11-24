@@ -3,8 +3,8 @@
  * Analyzes uncommitted changes in the current working directory
  */
 
-import * as vscode from 'vscode';
-import { GitAnalysisService } from '../services/git-analysis-service.js';
+import * as vscode from "vscode";
+import { GitAnalysisService } from "../services/git-analysis-service.js";
 import {
   executeAnalysisWithProgress,
   getWorkspaceFolder,
@@ -13,7 +13,7 @@ import {
   showAnalyzingPanel,
   showCompletionMessage,
   updatePanelWithResults,
-} from '../utils/git-analysis-helpers.js';
+} from "../utils/git-analysis-helpers.js";
 
 /**
  * Execute analyze working directory command
@@ -33,7 +33,7 @@ export async function analyzeWorkingDirectory(
     // Check if working directory is clean
     const isClean = await gitAnalysisService.isWorkingDirectoryClean(workingDirectory);
     if (isClean) {
-      vscode.window.showInformationMessage('No changes found in working directory.');
+      vscode.window.showInformationMessage("No changes found in working directory.");
       return;
     }
 
@@ -45,13 +45,13 @@ export async function analyzeWorkingDirectory(
 
     // Show panel immediately with analyzing state
     showAnalyzingPanel(context.extensionUri, {
-      changeSource: 'working-directory',
+      changeSource: "working-directory",
       workingDirectory,
     });
 
     // Execute analysis with progress tracking
     const result = await executeAnalysisWithProgress(
-      'Analyzing Working Directory Changes',
+      "Analyzing Working Directory Changes",
       async (progressCallback) => {
         return gitAnalysisService.analyzeWorkingDirectory(
           {
@@ -65,7 +65,7 @@ export async function analyzeWorkingDirectory(
 
     // Update panel with results
     updatePanelWithResults(context.extensionUri, result, {
-      changeSource: 'working-directory',
+      changeSource: "working-directory",
       workingDirectory,
     });
 
@@ -74,18 +74,13 @@ export async function analyzeWorkingDirectory(
   } catch (error) {
     const workspaceFolder = getWorkspaceFolder();
     if (workspaceFolder) {
-      handleAnalysisError(
-        error,
-        'Failed to analyze working directory',
-        {
-          changeSource: 'working-directory',
-          workingDirectory: workspaceFolder.uri.fsPath,
-        }
-      );
+      handleAnalysisError(error, "Failed to analyze working directory", {
+        changeSource: "working-directory",
+        workingDirectory: workspaceFolder.uri.fsPath,
+      });
     } else {
       const errorMessage = error instanceof Error ? error.message : String(error);
       vscode.window.showErrorMessage(`Failed to analyze working directory: ${errorMessage}`);
     }
   }
 }
-

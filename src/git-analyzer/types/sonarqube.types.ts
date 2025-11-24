@@ -84,32 +84,32 @@ export interface SonarQubeConfig extends SonarQubeServerConfig, SonarQubeScanner
  * SonarQube issue severity levels
  */
 export enum SonarQubeSeverity {
-  BLOCKER = 'BLOCKER',
-  CRITICAL = 'CRITICAL',
-  MAJOR = 'MAJOR',
-  MINOR = 'MINOR',
-  INFO = 'INFO',
+  BLOCKER = "BLOCKER",
+  CRITICAL = "CRITICAL",
+  MAJOR = "MAJOR",
+  MINOR = "MINOR",
+  INFO = "INFO",
 }
 
 /**
  * SonarQube issue type
  */
 export enum SonarQubeIssueType {
-  BUG = 'BUG',
-  VULNERABILITY = 'VULNERABILITY',
-  CODE_SMELL = 'CODE_SMELL',
-  SECURITY_HOTSPOT = 'SECURITY_HOTSPOT',
+  BUG = "BUG",
+  VULNERABILITY = "VULNERABILITY",
+  CODE_SMELL = "CODE_SMELL",
+  SECURITY_HOTSPOT = "SECURITY_HOTSPOT",
 }
 
 /**
  * SonarQube issue status
  */
 export enum SonarQubeIssueStatus {
-  OPEN = 'OPEN',
-  CONFIRMED = 'CONFIRMED',
-  REOPENED = 'REOPENED',
-  RESOLVED = 'RESOLVED',
-  CLOSED = 'CLOSED',
+  OPEN = "OPEN",
+  CONFIRMED = "CONFIRMED",
+  REOPENED = "REOPENED",
+  RESOLVED = "RESOLVED",
+  CLOSED = "CLOSED",
 }
 
 /**
@@ -265,10 +265,10 @@ export interface SonarQubeMetrics {
  * Quality gate status
  */
 export enum QualityGateStatus {
-  OK = 'OK',
-  WARN = 'WARN',
-  ERROR = 'ERROR',
-  NONE = 'NONE',
+  OK = "OK",
+  WARN = "WARN",
+  ERROR = "ERROR",
+  NONE = "NONE",
 }
 
 /**
@@ -339,12 +339,12 @@ export enum SonarQubeMode {
   /**
    * SonarQube server is available and configured
    */
-  SERVER = 'SERVER',
+  SERVER = "SERVER",
 
   /**
    * SonarQube is disabled or unavailable (AI-only mode)
    */
-  DISABLED = 'DISABLED',
+  DISABLED = "DISABLED",
 }
 
 /**

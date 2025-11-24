@@ -2,7 +2,7 @@
  * Diff parser utility for extracting and formatting Git diffs
  */
 
-import type { GitFileChange, GitChanges } from '../types/git.types.js';
+import type { GitFileChange, GitChanges } from "../types/git.types.js";
 
 /**
  * Parsed file change with context
@@ -11,7 +11,7 @@ export interface ParsedFileChange {
   /** File path */
   file: string;
   /** Change type */
-  changeType: 'added' | 'modified' | 'deleted' | 'renamed';
+  changeType: "added" | "modified" | "deleted" | "renamed";
   /** Old file path (for renames) */
   oldPath?: string;
   /** Formatted diff content for this file */
@@ -51,7 +51,7 @@ export class DiffParser {
     const fileDiffs = this.extractFileDiffs(changes.diff);
 
     return changes.files.map((fileChange) => {
-      const fileDiff = fileDiffs.get(fileChange.path) || '';
+      const fileDiff = fileDiffs.get(fileChange.path) || "";
       return this.parseFileChange(fileChange, fileDiff);
     });
   }
@@ -68,7 +68,7 @@ export class DiffParser {
       return fileDiffs;
     }
 
-    const lines = fullDiff.split('\n');
+    const lines = fullDiff.split("\n");
     let currentFile: string | null = null;
     let currentDiff: string[] = [];
 
@@ -78,7 +78,7 @@ export class DiffParser {
       if (diffMatch) {
         // Save previous file's diff
         if (currentFile && currentDiff.length > 0) {
-          fileDiffs.set(currentFile, currentDiff.join('\n'));
+          fileDiffs.set(currentFile, currentDiff.join("\n"));
         }
 
         currentFile = diffMatch[2]; // Use the new path
@@ -100,7 +100,7 @@ export class DiffParser {
 
     // Save last file's diff
     if (currentFile && currentDiff.length > 0) {
-      fileDiffs.set(currentFile, currentDiff.join('\n'));
+      fileDiffs.set(currentFile, currentDiff.join("\n"));
     }
 
     return fileDiffs;
@@ -136,17 +136,17 @@ export class DiffParser {
    */
   private detectChangeType(
     fileChange: GitFileChange
-  ): 'added' | 'modified' | 'deleted' | 'renamed' {
-    if (fileChange.status === 'renamed') {
-      return 'renamed';
+  ): "added" | "modified" | "deleted" | "renamed" {
+    if (fileChange.status === "renamed") {
+      return "renamed";
     }
-    if (fileChange.status === 'added' || fileChange.status === 'untracked') {
-      return 'added';
+    if (fileChange.status === "added" || fileChange.status === "untracked") {
+      return "added";
     }
-    if (fileChange.status === 'deleted') {
-      return 'deleted';
+    if (fileChange.status === "deleted") {
+      return "deleted";
     }
-    return 'modified';
+    return "modified";
   }
 
   /**
@@ -156,7 +156,7 @@ export class DiffParser {
    */
   private extractExtension(filePath: string): string {
     const match = filePath.match(/\.([^.]+)$/);
-    return match ? match[1] : '';
+    return match ? match[1] : "";
   }
 
   /**
@@ -165,15 +165,8 @@ export class DiffParser {
    * @param options - Formatting options
    * @returns Formatted diff string
    */
-  formatDiffForAnalysis(
-    parsedChange: ParsedFileChange,
-    options: DiffFormatOptions = {}
-  ): string {
-    const {
-      includeContext = true,
-      maxContextLines = 3,
-      includeMetadata = true,
-    } = options;
+  formatDiffForAnalysis(parsedChange: ParsedFileChange, options: DiffFormatOptions = {}): string {
+    const { includeContext = true, maxContextLines = 3, includeMetadata = true } = options;
 
     const parts: string[] = [];
 
@@ -185,7 +178,7 @@ export class DiffParser {
       }
       parts.push(`Language: ${this.getLanguageFromExtension(parsedChange.extension)}`);
       parts.push(`Changes: +${parsedChange.additions} -${parsedChange.deletions}`);
-      parts.push('');
+      parts.push("");
     }
 
     let diff = parsedChange.diff;
@@ -196,7 +189,7 @@ export class DiffParser {
 
     parts.push(diff);
 
-    return parts.join('\n');
+    return parts.join("\n");
   }
 
   /**
@@ -206,36 +199,36 @@ export class DiffParser {
    */
   private getLanguageFromExtension(extension: string): string {
     const extensionMap: Record<string, string> = {
-      ts: 'TypeScript',
-      js: 'JavaScript',
-      tsx: 'TypeScript React',
-      jsx: 'JavaScript React',
-      py: 'Python',
-      java: 'Java',
-      cpp: 'C++',
-      c: 'C',
-      cs: 'C#',
-      go: 'Go',
-      rs: 'Rust',
-      rb: 'Ruby',
-      php: 'PHP',
-      swift: 'Swift',
-      kt: 'Kotlin',
-      scala: 'Scala',
-      sh: 'Shell',
-      bash: 'Bash',
-      sql: 'SQL',
-      json: 'JSON',
-      yaml: 'YAML',
-      yml: 'YAML',
-      xml: 'XML',
-      html: 'HTML',
-      css: 'CSS',
-      scss: 'SCSS',
-      md: 'Markdown',
+      ts: "TypeScript",
+      js: "JavaScript",
+      tsx: "TypeScript React",
+      jsx: "JavaScript React",
+      py: "Python",
+      java: "Java",
+      cpp: "C++",
+      c: "C",
+      cs: "C#",
+      go: "Go",
+      rs: "Rust",
+      rb: "Ruby",
+      php: "PHP",
+      swift: "Swift",
+      kt: "Kotlin",
+      scala: "Scala",
+      sh: "Shell",
+      bash: "Bash",
+      sql: "SQL",
+      json: "JSON",
+      yaml: "YAML",
+      yml: "YAML",
+      xml: "XML",
+      html: "HTML",
+      css: "CSS",
+      scss: "SCSS",
+      md: "Markdown",
     };
 
-    return extensionMap[extension.toLowerCase()] || 'Unknown';
+    return extensionMap[extension.toLowerCase()] || "Unknown";
   }
 
   /**
@@ -245,18 +238,18 @@ export class DiffParser {
    * @returns Diff with limited context
    */
   private removeContextLines(diff: string, maxContextLines: number): string {
-    const lines = diff.split('\n');
+    const lines = diff.split("\n");
     const result: string[] = [];
     let contextCount = 0;
 
     for (const line of lines) {
-      if (line.startsWith('@@') || line.startsWith('+++') || line.startsWith('---')) {
+      if (line.startsWith("@@") || line.startsWith("+++") || line.startsWith("---")) {
         result.push(line);
         contextCount = 0;
         continue;
       }
 
-      if (line.startsWith('+') || line.startsWith('-')) {
+      if (line.startsWith("+") || line.startsWith("-")) {
         result.push(line);
         contextCount = 0;
         continue;
@@ -266,12 +259,12 @@ export class DiffParser {
         result.push(line);
         contextCount++;
       } else if (contextCount === maxContextLines) {
-        result.push('... (context truncated)');
+        result.push("... (context truncated)");
         contextCount++;
       }
     }
 
-    return result.join('\n');
+    return result.join("\n");
   }
 
   /**
@@ -279,13 +272,11 @@ export class DiffParser {
    * @param parsedChanges - Array of parsed file changes
    * @returns Map of extension to file changes
    */
-  groupByExtension(
-    parsedChanges: ParsedFileChange[]
-  ): Map<string, ParsedFileChange[]> {
+  groupByExtension(parsedChanges: ParsedFileChange[]): Map<string, ParsedFileChange[]> {
     const groups = new Map<string, ParsedFileChange[]>();
 
     for (const change of parsedChanges) {
-      const ext = change.extension || 'unknown';
+      const ext = change.extension || "unknown";
       const group = groups.get(ext) || [];
       group.push(change);
       groups.set(ext, group);
@@ -311,7 +302,7 @@ export class DiffParser {
    */
   filterByChangeType(
     parsedChanges: ParsedFileChange[],
-    changeTypes: Array<'added' | 'modified' | 'deleted' | 'renamed'>
+    changeTypes: Array<"added" | "modified" | "deleted" | "renamed">
   ): ParsedFileChange[] {
     return parsedChanges.filter((change) => changeTypes.includes(change.changeType));
   }
@@ -322,10 +313,7 @@ export class DiffParser {
    * @param extensions - Extensions to include
    * @returns Filtered array
    */
-  filterByExtension(
-    parsedChanges: ParsedFileChange[],
-    extensions: string[]
-  ): ParsedFileChange[] {
+  filterByExtension(parsedChanges: ParsedFileChange[], extensions: string[]): ParsedFileChange[] {
     const normalizedExtensions = extensions.map((ext) => ext.toLowerCase());
     return parsedChanges.filter((change) =>
       normalizedExtensions.includes(change.extension.toLowerCase())
@@ -363,7 +351,7 @@ export class DiffParser {
 
       byChangeType[change.changeType]++;
 
-      const ext = change.extension || 'unknown';
+      const ext = change.extension || "unknown";
       byExtension[ext] = (byExtension[ext] || 0) + 1;
 
       if (!mostComplexFile || change.complexity > mostComplexFile.complexity) {

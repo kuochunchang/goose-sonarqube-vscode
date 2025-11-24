@@ -3,7 +3,7 @@
  * Uses gpt-3-encoder for accurate token counting
  */
 
-import { encode } from 'gpt-3-encoder';
+import { encode } from "gpt-3-encoder";
 
 /**
  * Token counting configuration
@@ -39,10 +39,10 @@ export class TokenCounter {
     this.safetyMargin = config.safetyMargin ?? 0.9;
 
     if (this.maxTokensPerBatch <= 0) {
-      throw new Error('maxTokensPerBatch must be greater than 0');
+      throw new Error("maxTokensPerBatch must be greater than 0");
     }
     if (this.safetyMargin <= 0 || this.safetyMargin > 1) {
-      throw new Error('safetyMargin must be between 0 and 1');
+      throw new Error("safetyMargin must be between 0 and 1");
     }
   }
 
@@ -60,7 +60,7 @@ export class TokenCounter {
       const encoded = encode(text);
       return encoded.length;
     } catch (error) {
-      console.warn('Failed to encode text for token counting, using approximate count', error);
+      console.warn("Failed to encode text for token counting, using approximate count", error);
       return Math.ceil(text.length / 4);
     }
   }
@@ -89,7 +89,7 @@ export class TokenCounter {
    * @param separator - Separator to split by (default: newline)
    * @returns Array of text chunks within token limit
    */
-  splitIntoChunks(text: string, separator = '\n'): string[] {
+  splitIntoChunks(text: string, separator = "\n"): string[] {
     const effectiveMax = this.getEffectiveMaxTokens();
     const chunks: string[] = [];
 
@@ -98,7 +98,7 @@ export class TokenCounter {
     }
 
     const lines = text.split(separator);
-    let currentChunk = '';
+    let currentChunk = "";
     let currentTokens = 0;
 
     for (const line of lines) {
@@ -107,7 +107,7 @@ export class TokenCounter {
       if (lineTokens > effectiveMax) {
         if (currentChunk) {
           chunks.push(currentChunk.trimEnd());
-          currentChunk = '';
+          currentChunk = "";
           currentTokens = 0;
         }
 
@@ -141,17 +141,17 @@ export class TokenCounter {
    */
   private splitLongLine(line: string, maxTokens: number): string[] {
     const chunks: string[] = [];
-    const words = line.split(' ');
-    let currentChunk = '';
+    const words = line.split(" ");
+    let currentChunk = "";
     let currentTokens = 0;
 
     for (const word of words) {
-      const wordTokens = this.countTokens(word + ' ');
+      const wordTokens = this.countTokens(word + " ");
 
       if (wordTokens > maxTokens) {
         if (currentChunk) {
           chunks.push(currentChunk.trim());
-          currentChunk = '';
+          currentChunk = "";
           currentTokens = 0;
         }
 
@@ -162,10 +162,10 @@ export class TokenCounter {
 
       if (currentTokens + wordTokens > maxTokens) {
         chunks.push(currentChunk.trim());
-        currentChunk = word + ' ';
+        currentChunk = word + " ";
         currentTokens = wordTokens;
       } else {
-        currentChunk += word + ' ';
+        currentChunk += word + " ";
         currentTokens += wordTokens;
       }
     }
@@ -185,7 +185,7 @@ export class TokenCounter {
    */
   private splitByCharacters(text: string, maxTokens: number): string[] {
     const chunks: string[] = [];
-    let currentChunk = '';
+    let currentChunk = "";
 
     for (const char of text) {
       const testChunk = currentChunk + char;

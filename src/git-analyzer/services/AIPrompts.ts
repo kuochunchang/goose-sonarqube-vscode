@@ -3,7 +3,7 @@
  * Provides specialized prompts for different analysis types
  */
 
-import type { ParsedFileChange } from '../utils/DiffParser.js';
+import type { ParsedFileChange } from "../utils/DiffParser.js";
 
 /**
  * Prompt template for code quality analysis
@@ -16,7 +16,7 @@ export function buildQualityAnalysisPrompt(changes: ParsedFileChange[]): string 
       (change) =>
         `- ${change.file} (${change.changeType}): +${change.additions} -${change.deletions}`
     )
-    .join('\n');
+    .join("\n");
 
   const diffsContent = changes
     .map((change) => {
@@ -30,7 +30,7 @@ ${change.diff}
 \`\`\`
 `;
     })
-    .join('\n---\n');
+    .join("\n---\n");
 
   return `You are an expert code reviewer analyzing Git changes for code quality issues.
 
@@ -98,7 +98,7 @@ export function buildSecurityAnalysisPrompt(changes: ParsedFileChange[]): string
       (change) =>
         `- ${change.file} (${change.changeType}): +${change.additions} -${change.deletions}`
     )
-    .join('\n');
+    .join("\n");
 
   const diffsContent = changes
     .map((change) => {
@@ -112,7 +112,7 @@ ${change.diff}
 \`\`\`
 `;
     })
-    .join('\n---\n');
+    .join("\n---\n");
 
   return `You are a security expert analyzing Git changes for security vulnerabilities.
 
@@ -188,7 +188,7 @@ export function buildImpactAnalysisPrompt(
       (change) =>
         `- ${change.file} (${change.changeType}): +${change.additions} -${change.deletions}`
     )
-    .join('\n');
+    .join("\n");
 
   const diffsContent = changes
     .map((change) => {
@@ -202,14 +202,14 @@ ${change.diff}
 \`\`\`
 `;
     })
-    .join('\n---\n');
+    .join("\n---\n");
 
   const commitsSection = commitMessages
     ? `
 ## Commit History
-${commitMessages.map((msg, i) => `${i + 1}. ${msg}`).join('\n')}
+${commitMessages.map((msg, i) => `${i + 1}. ${msg}`).join("\n")}
 `
-    : '';
+    : "";
 
   return `You are a software architect analyzing the impact of Git changes on the codebase.
 
@@ -300,7 +300,7 @@ export function buildArchitectureReviewPrompt(changes: ParsedFileChange[]): stri
       (change) =>
         `- ${change.file} (${change.changeType}): +${change.additions} -${change.deletions}`
     )
-    .join('\n');
+    .join("\n");
 
   const diffsContent = changes
     .map((change) => {
@@ -314,7 +314,7 @@ ${change.diff}
 \`\`\`
 `;
     })
-    .join('\n---\n');
+    .join("\n---\n");
 
   return `You are a software architect reviewing code changes for architectural patterns and design principles.
 
@@ -352,34 +352,34 @@ Keep the review concise but insightful.`;
  */
 function getLanguageFromExtension(extension: string): string {
   const extensionMap: Record<string, string> = {
-    ts: 'TypeScript',
-    js: 'JavaScript',
-    tsx: 'TypeScript React',
-    jsx: 'JavaScript React',
-    py: 'Python',
-    java: 'Java',
-    cpp: 'C++',
-    c: 'C',
-    cs: 'C#',
-    go: 'Go',
-    rs: 'Rust',
-    rb: 'Ruby',
-    php: 'PHP',
-    swift: 'Swift',
-    kt: 'Kotlin',
-    scala: 'Scala',
-    sh: 'Shell',
-    bash: 'Bash',
-    sql: 'SQL',
-    json: 'JSON',
-    yaml: 'YAML',
-    yml: 'YAML',
-    xml: 'XML',
-    html: 'HTML',
-    css: 'CSS',
-    scss: 'SCSS',
-    md: 'Markdown',
+    ts: "TypeScript",
+    js: "JavaScript",
+    tsx: "TypeScript React",
+    jsx: "JavaScript React",
+    py: "Python",
+    java: "Java",
+    cpp: "C++",
+    c: "C",
+    cs: "C#",
+    go: "Go",
+    rs: "Rust",
+    rb: "Ruby",
+    php: "PHP",
+    swift: "Swift",
+    kt: "Kotlin",
+    scala: "Scala",
+    sh: "Shell",
+    bash: "Bash",
+    sql: "SQL",
+    json: "JSON",
+    yaml: "YAML",
+    yml: "YAML",
+    xml: "XML",
+    html: "HTML",
+    css: "CSS",
+    scss: "SCSS",
+    md: "Markdown",
   };
 
-  return extensionMap[extension?.toLowerCase()] || 'Unknown';
+  return extensionMap[extension?.toLowerCase()] || "Unknown";
 }

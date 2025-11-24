@@ -4,10 +4,10 @@
  * Utility for loading and validating .goose-review.yml configuration
  */
 
-import { readFile } from 'fs/promises';
-import { existsSync } from 'fs';
-import { resolve } from 'path';
-import type { SonarQubeConfig } from '../types/sonarqube.types.js';
+import { readFile } from "fs/promises";
+import { existsSync } from "fs";
+import { resolve } from "path";
+import type { SonarQubeConfig } from "../types/sonarqube.types.js";
 
 /**
  * Configuration file structure
@@ -56,7 +56,7 @@ export interface GooseReviewConfig {
     maxFileSize?: number;
   };
   output?: {
-    format?: 'markdown' | 'html' | 'json';
+    format?: "markdown" | "html" | "json";
     destination?: string;
     includeMetrics?: boolean;
     includeDashboardUrl?: boolean;
@@ -73,14 +73,14 @@ export class ConfigLoader {
    * @returns Parsed configuration
    */
   static async loadConfig(filePath?: string): Promise<GooseReviewConfig> {
-    const configPath = filePath || resolve(process.cwd(), '.goose-review.yml');
+    const configPath = filePath || resolve(process.cwd(), ".goose-review.yml");
 
     if (!existsSync(configPath)) {
       throw new Error(`Configuration file not found: ${configPath}`);
     }
 
     try {
-      const content = await readFile(configPath, 'utf-8');
+      const content = await readFile(configPath, "utf-8");
       const config = this.parseYaml(content);
       this.validateConfig(config);
       return config;
@@ -108,7 +108,7 @@ export class ConfigLoader {
       const sqConfig = config.sonarqube;
 
       if (!sqConfig.serverUrl || !sqConfig.projectKey) {
-        throw new Error('SonarQube configuration requires serverUrl and projectKey');
+        throw new Error("SonarQube configuration requires serverUrl and projectKey");
       }
 
       return {
@@ -125,7 +125,7 @@ export class ConfigLoader {
       };
     } catch (error) {
       // If config file doesn't exist, return null (optional SonarQube)
-      if (error instanceof Error && error.message.includes('not found')) {
+      if (error instanceof Error && error.message.includes("not found")) {
         return null;
       }
       // Re-throw validation errors
@@ -139,7 +139,7 @@ export class ConfigLoader {
    * @returns True if file exists
    */
   static configExists(filePath?: string): boolean {
-    const configPath = filePath || resolve(process.cwd(), '.goose-review.yml');
+    const configPath = filePath || resolve(process.cwd(), ".goose-review.yml");
     return existsSync(configPath);
   }
 
@@ -150,7 +150,7 @@ export class ConfigLoader {
    * @returns Parsed configuration object
    */
   private static parseYaml(content: string): GooseReviewConfig {
-    const lines = content.split('\n');
+    const lines = content.split("\n");
     const result: GooseReviewConfig = {};
     const stack: Array<{ obj: Record<string, unknown>; indent: number }> = [
       { obj: result as Record<string, unknown>, indent: -1 },
@@ -158,7 +158,7 @@ export class ConfigLoader {
 
     for (const line of lines) {
       // Skip empty lines and comments
-      if (!line.trim() || line.trim().startsWith('#')) {
+      if (!line.trim() || line.trim().startsWith("#")) {
         continue;
       }
 
@@ -172,25 +172,25 @@ export class ConfigLoader {
 
       const currentParent = stack[stack.length - 1].obj;
 
-      if (trimmedLine.includes(':')) {
-        const colonIndex = trimmedLine.indexOf(':');
+      if (trimmedLine.includes(":")) {
+        const colonIndex = trimmedLine.indexOf(":");
         const key = trimmedLine.substring(0, colonIndex).trim();
         const valueStr = trimmedLine.substring(colonIndex + 1).trim();
 
-        if (valueStr === '') {
+        if (valueStr === "") {
           // Nested object
           const newObj: Record<string, unknown> = {};
           currentParent[key] = newObj;
           stack.push({ obj: newObj, indent });
-        } else if (valueStr.startsWith('[') && valueStr.endsWith(']')) {
+        } else if (valueStr.startsWith("[") && valueStr.endsWith("]")) {
           // Array value
           const arrayContent = valueStr.slice(1, -1);
-          currentParent[key] = arrayContent.split(',').map((v) => v.trim());
+          currentParent[key] = arrayContent.split(",").map((v) => v.trim());
         } else {
           // Simple value
           currentParent[key] = this.parseValue(valueStr);
         }
-      } else if (trimmedLine.startsWith('-')) {
+      } else if (trimmedLine.startsWith("-")) {
         // Array item
         const value = trimmedLine.substring(1).trim();
         if (!Array.isArray(currentParent)) {
@@ -213,18 +213,21 @@ export class ConfigLoader {
    */
   private static parseValue(value: string): unknown {
     // Boolean
-    if (value === 'true') return true;
-    if (value === 'false') return false;
+    if (value === "true") return true;
+    if (value === "false") return false;
 
     // Null
-    if (value === 'null' || value === '~') return null;
+    if (value === "null" || value === "~") return null;
 
     // Number
     if (/^-?\d+$/.test(value)) return parseInt(value, 10);
     if (/^-?\d+\.\d+$/.test(value)) return parseFloat(value);
 
     // String (remove quotes if present)
-    if ((value.startsWith('"') && value.endsWith('"')) || (value.startsWith("'") && value.endsWith("'"))) {
+    if (
+      (value.startsWith('"') && value.endsWith('"')) ||
+      (value.startsWith("'") && value.endsWith("'"))
+    ) {
       return value.slice(1, -1);
     }
 
@@ -239,39 +242,39 @@ export class ConfigLoader {
   private static validateConfig(config: GooseReviewConfig): void {
     if (config.sonarqube) {
       if (!config.sonarqube.serverUrl) {
-        throw new Error('sonarqube.serverUrl is required');
+        throw new Error("sonarqube.serverUrl is required");
       }
       if (!config.sonarqube.projectKey) {
-        throw new Error('sonarqube.projectKey is required');
+        throw new Error("sonarqube.projectKey is required");
       }
 
       // Validate URL format
       try {
         new URL(config.sonarqube.serverUrl);
       } catch {
-        throw new Error('sonarqube.serverUrl must be a valid URL');
+        throw new Error("sonarqube.serverUrl must be a valid URL");
       }
     }
 
     if (config.analysis?.batch) {
       const batch = config.analysis.batch;
       if (batch.maxFilesPerBatch !== undefined && batch.maxFilesPerBatch < 1) {
-        throw new Error('analysis.batch.maxFilesPerBatch must be >= 1');
+        throw new Error("analysis.batch.maxFilesPerBatch must be >= 1");
       }
       if (batch.maxTokensPerBatch !== undefined && batch.maxTokensPerBatch < 100) {
-        throw new Error('analysis.batch.maxTokensPerBatch must be >= 100');
+        throw new Error("analysis.batch.maxTokensPerBatch must be >= 100");
       }
       if (batch.parallelBatches !== undefined && batch.parallelBatches < 1) {
-        throw new Error('analysis.batch.parallelBatches must be >= 1');
+        throw new Error("analysis.batch.parallelBatches must be >= 1");
       }
     }
 
     if (config.cache?.ttl !== undefined && config.cache.ttl < 0) {
-      throw new Error('cache.ttl must be >= 0');
+      throw new Error("cache.ttl must be >= 0");
     }
 
-    if (config.output?.format && !['markdown', 'html', 'json'].includes(config.output.format)) {
-      throw new Error('output.format must be one of: markdown, html, json');
+    if (config.output?.format && !["markdown", "html", "json"].includes(config.output.format)) {
+      throw new Error("output.format must be one of: markdown, html, json");
     }
   }
 }

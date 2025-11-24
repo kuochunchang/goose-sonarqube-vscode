@@ -8,15 +8,15 @@
  * - Comment collapsing (hiding previous bot comments)
  */
 
-// @ts-ignore
-import { Octokit } from '@octokit/rest';
+// @ts-expect-error - Octokit types may not be fully compatible
+import { Octokit } from "@octokit/rest";
 import type {
   GitHubConfig,
   GitHubPullRequest,
   GitHubPRFile,
   GitHubRepository,
   PRCommentOptions,
-} from '../types/github.types.js';
+} from "../types/github.types.js";
 
 export class GitHubService {
   private readonly octokit: Octokit;
@@ -24,17 +24,14 @@ export class GitHubService {
   constructor(config: GitHubConfig) {
     this.octokit = new Octokit({
       auth: config.token,
-      baseUrl: config.baseUrl || 'https://api.github.com',
+      baseUrl: config.baseUrl || "https://api.github.com",
     });
   }
 
   /**
    * Get Pull Request metadata
    */
-  async getPullRequest(
-    repository: GitHubRepository,
-    prNumber: number
-  ): Promise<GitHubPullRequest> {
+  async getPullRequest(repository: GitHubRepository, prNumber: number): Promise<GitHubPullRequest> {
     try {
       const { data } = await this.octokit.pulls.get({
         owner: repository.owner,
@@ -54,9 +51,9 @@ export class GitHubService {
           ref: data.base.ref,
           sha: data.base.sha,
         },
-        state: data.state as 'open' | 'closed',
+        state: data.state as "open" | "closed",
         user: {
-          login: data.user?.login || 'unknown',
+          login: data.user?.login || "unknown",
         },
         created_at: data.created_at,
         updated_at: data.updated_at,
@@ -81,7 +78,6 @@ export class GitHubService {
       const perPage = 100;
 
       // Paginate through all files (GitHub limits to 100 per page)
-      // eslint-disable-next-line no-constant-condition
       while (true) {
         const { data } = await this.octokit.pulls.listFiles({
           owner: repository.owner,
@@ -98,7 +94,7 @@ export class GitHubService {
         files.push(
           ...data.map((file) => ({
             filename: file.filename,
-            status: file.status as 'added' | 'removed' | 'modified' | 'renamed',
+            status: file.status as "added" | "removed" | "modified" | "renamed",
             additions: file.additions,
             deletions: file.deletions,
             changes: file.changes,
@@ -132,7 +128,7 @@ export class GitHubService {
         repo: repository.repo,
         pull_number: prNumber,
         mediaType: {
-          format: 'diff',
+          format: "diff",
         },
       });
 
@@ -217,8 +213,8 @@ export class GitHubService {
       const botComments = comments.filter(
         (comment) =>
           comment.user?.login === botLogin &&
-          comment.body?.includes('# 🔍 Code Review Analysis') &&
-          !comment.body?.includes('<!-- collapsed -->')
+          comment.body?.includes("# 🔍 Code Review Analysis") &&
+          !comment.body?.includes("<!-- collapsed -->")
       );
 
       // Collapse each previous comment
@@ -230,7 +226,7 @@ export class GitHubService {
       }
     } catch (error) {
       // Non-critical error, just log and continue
-      console.warn('Failed to collapse previous comments:', error);
+      console.warn("Failed to collapse previous comments:", error);
     }
   }
 
@@ -239,10 +235,10 @@ export class GitHubService {
    */
   private createCollapsedComment(originalBody: string): string {
     // Extract summary info from original comment
-    const lines = originalBody.split('\n');
+    const lines = originalBody.split("\n");
     const summaryLines = lines.slice(0, 5); // First 5 lines (title + summary)
 
-    return `${summaryLines.join('\n')}
+    return `${summaryLines.join("\n")}
 
 <!-- collapsed -->
 
@@ -269,8 +265,8 @@ ${originalBody}
         username: user.login,
       });
 
-      return ['admin', 'write'].includes(permission.permission);
-    } catch (error) {
+      return ["admin", "write"].includes(permission.permission);
+    } catch {
       return false;
     }
   }
@@ -293,4 +289,3 @@ ${originalBody}
     }
   }
 }
-

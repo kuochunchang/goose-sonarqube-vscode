@@ -3,31 +3,29 @@
  * Allows users to bind workspace to a SonarQube project
  */
 
-import * as vscode from 'vscode';
+import * as vscode from "vscode";
 import {
   SonarQubeConfigService,
   type SonarQubeProjectBinding,
-} from '../services/sonarqube-config-service.js';
+} from "../services/sonarqube-config-service.js";
 
 /**
  * Bind workspace to a SonarQube project
  */
-export async function bindSonarQubeProject(
-  context: vscode.ExtensionContext
-): Promise<void> {
+export async function bindSonarQubeProject(context: vscode.ExtensionContext): Promise<void> {
   const configService = new SonarQubeConfigService(context);
 
   try {
     const connections = configService.getConnections();
     if (connections.length === 0) {
       const addConnection = await vscode.window.showWarningMessage(
-        'No SonarQube connections found. Would you like to add one?',
-        'Add Connection',
-        'Cancel'
+        "No SonarQube connections found. Would you like to add one?",
+        "Add Connection",
+        "Cancel"
       );
 
-      if (addConnection === 'Add Connection') {
-        const { addSonarQubeConnection } = await import('./add-sonarqube-connection.js');
+      if (addConnection === "Add Connection") {
+        const { addSonarQubeConnection } = await import("./add-sonarqube-connection.js");
         await addSonarQubeConnection(context);
         // Retry after adding connection
         return bindSonarQubeProject(context);
@@ -43,7 +41,7 @@ export async function bindSonarQubeProject(
     }));
 
     const selectedConnection = await vscode.window.showQuickPick(connectionItems, {
-      placeHolder: 'Select a SonarQube connection',
+      placeHolder: "Select a SonarQube connection",
     });
 
     if (!selectedConnection) {
@@ -52,11 +50,11 @@ export async function bindSonarQubeProject(
 
     // Step 2: Get project key
     const projectKey = await vscode.window.showInputBox({
-      prompt: 'Enter SonarQube project key',
-      placeHolder: 'my-project-key',
+      prompt: "Enter SonarQube project key",
+      placeHolder: "my-project-key",
       validateInput: (value) => {
         if (!value || value.trim().length === 0) {
-          return 'Project key is required';
+          return "Project key is required";
         }
         return null;
       },
@@ -68,8 +66,8 @@ export async function bindSonarQubeProject(
 
     // Step 3: Get project name (optional)
     const projectName = await vscode.window.showInputBox({
-      prompt: 'Enter project display name (optional)',
-      placeHolder: 'My Project',
+      prompt: "Enter project display name (optional)",
+      placeHolder: "My Project",
     });
 
     // Step 4: Create binding
@@ -89,4 +87,3 @@ export async function bindSonarQubeProject(
     vscode.window.showErrorMessage(`Failed to bind SonarQube project: ${errorMessage}`);
   }
 }
-

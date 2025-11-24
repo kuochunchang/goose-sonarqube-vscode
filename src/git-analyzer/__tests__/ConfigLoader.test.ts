@@ -1,12 +1,12 @@
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { ConfigLoader } from '../utils/ConfigLoader.js';
-import { writeFile, rm, mkdir } from 'fs/promises';
-import { existsSync } from 'fs';
-import { resolve } from 'path';
+import { describe, it, expect, beforeEach, afterEach } from "vitest";
+import { ConfigLoader } from "../utils/ConfigLoader.js";
+import { writeFile, rm, mkdir } from "fs/promises";
+import { existsSync } from "fs";
+import { resolve } from "path";
 
-describe('ConfigLoader', () => {
-  const testConfigDir = '.test-config';
-  const testConfigPath = resolve(process.cwd(), testConfigDir, '.goose-review.yml');
+describe("ConfigLoader", () => {
+  const testConfigDir = ".test-config";
+  const testConfigPath = resolve(process.cwd(), testConfigDir, ".goose-review.yml");
 
   beforeEach(async () => {
     // Create test config directory
@@ -20,8 +20,8 @@ describe('ConfigLoader', () => {
     }
   });
 
-  describe('loadConfig', () => {
-    it('should load valid configuration file', async () => {
+  describe("loadConfig", () => {
+    it("should load valid configuration file", async () => {
       const configContent = `
 sonarqube:
   serverUrl: http://localhost:9000
@@ -44,25 +44,23 @@ cache:
   ttl: 86400
 `;
 
-      await writeFile(testConfigPath, configContent, 'utf-8');
+      await writeFile(testConfigPath, configContent, "utf-8");
 
       const config = await ConfigLoader.loadConfig(testConfigPath);
 
-      expect(config.sonarqube?.serverUrl).toBe('http://localhost:9000');
-      expect(config.sonarqube?.token).toBe('test-token');
-      expect(config.sonarqube?.projectKey).toBe('test-project');
+      expect(config.sonarqube?.serverUrl).toBe("http://localhost:9000");
+      expect(config.sonarqube?.token).toBe("test-token");
+      expect(config.sonarqube?.projectKey).toBe("test-project");
       expect(config.analysis?.types?.codeQuality).toBe(true);
-      expect(config.analysis?.ai?.provider).toBe('openai');
+      expect(config.analysis?.ai?.provider).toBe("openai");
       expect(config.cache?.enabled).toBe(true);
     });
 
-    it('should throw error if file does not exist', async () => {
-      await expect(ConfigLoader.loadConfig('/non/existent/path')).rejects.toThrow(
-        'not found',
-      );
+    it("should throw error if file does not exist", async () => {
+      await expect(ConfigLoader.loadConfig("/non/existent/path")).rejects.toThrow("not found");
     });
 
-    it('should parse boolean values correctly', async () => {
+    it("should parse boolean values correctly", async () => {
       const configContent = `
 sonarqube:
   serverUrl: http://localhost:9000
@@ -75,7 +73,7 @@ analysis:
     security: false
 `;
 
-      await writeFile(testConfigPath, configContent, 'utf-8');
+      await writeFile(testConfigPath, configContent, "utf-8");
 
       const config = await ConfigLoader.loadConfig(testConfigPath);
 
@@ -84,7 +82,7 @@ analysis:
       expect(config.analysis?.types?.security).toBe(false);
     });
 
-    it('should parse numeric values correctly', async () => {
+    it("should parse numeric values correctly", async () => {
       const configContent = `
 sonarqube:
   serverUrl: http://localhost:9000
@@ -100,7 +98,7 @@ analysis:
     maxTokensPerBatch: 8000
 `;
 
-      await writeFile(testConfigPath, configContent, 'utf-8');
+      await writeFile(testConfigPath, configContent, "utf-8");
 
       const config = await ConfigLoader.loadConfig(testConfigPath);
 
@@ -110,7 +108,7 @@ analysis:
       expect(config.analysis?.batch?.maxTokensPerBatch).toBe(8000);
     });
 
-    it('should skip comments and empty lines', async () => {
+    it("should skip comments and empty lines", async () => {
       const configContent = `
 # This is a comment
 sonarqube:
@@ -122,17 +120,17 @@ sonarqube:
 # Comment at the end
 `;
 
-      await writeFile(testConfigPath, configContent, 'utf-8');
+      await writeFile(testConfigPath, configContent, "utf-8");
 
       const config = await ConfigLoader.loadConfig(testConfigPath);
 
-      expect(config.sonarqube?.serverUrl).toBe('http://localhost:9000');
-      expect(config.sonarqube?.projectKey).toBe('test-project');
+      expect(config.sonarqube?.serverUrl).toBe("http://localhost:9000");
+      expect(config.sonarqube?.projectKey).toBe("test-project");
     });
   });
 
-  describe('loadSonarQubeConfig', () => {
-    it('should load SonarQube configuration', async () => {
+  describe("loadSonarQubeConfig", () => {
+    it("should load SonarQube configuration", async () => {
       const configContent = `
 sonarqube:
   serverUrl: http://localhost:9000
@@ -145,100 +143,94 @@ sonarqube:
   timeout: 5000
 `;
 
-      await writeFile(testConfigPath, configContent, 'utf-8');
+      await writeFile(testConfigPath, configContent, "utf-8");
 
       const config = await ConfigLoader.loadSonarQubeConfig(testConfigPath);
 
       expect(config).not.toBeNull();
-      expect(config?.serverUrl).toBe('http://localhost:9000');
-      expect(config?.token).toBe('test-token');
-      expect(config?.projectKey).toBe('test-project');
-      expect(config?.projectName).toBe('Test Project');
-      expect(config?.projectVersion).toBe('1.0.0');
-      expect(config?.sources).toBe('src');
-      expect(config?.exclusions).toBe('node_modules/**');
+      expect(config?.serverUrl).toBe("http://localhost:9000");
+      expect(config?.token).toBe("test-token");
+      expect(config?.projectKey).toBe("test-project");
+      expect(config?.projectName).toBe("Test Project");
+      expect(config?.projectVersion).toBe("1.0.0");
+      expect(config?.sources).toBe("src");
+      expect(config?.exclusions).toBe("node_modules/**");
       expect(config?.timeout).toBe(5000);
     });
 
-    it('should return null if no SonarQube config section', async () => {
+    it("should return null if no SonarQube config section", async () => {
       const configContent = `
 analysis:
   types:
     codeQuality: true
 `;
 
-      await writeFile(testConfigPath, configContent, 'utf-8');
+      await writeFile(testConfigPath, configContent, "utf-8");
 
       const config = await ConfigLoader.loadSonarQubeConfig(testConfigPath);
 
       expect(config).toBeNull();
     });
 
-    it('should return null if config file does not exist', async () => {
-      const config = await ConfigLoader.loadSonarQubeConfig('/non/existent/path');
+    it("should return null if config file does not exist", async () => {
+      const config = await ConfigLoader.loadSonarQubeConfig("/non/existent/path");
 
       expect(config).toBeNull();
     });
 
-    it('should throw error if serverUrl is missing', async () => {
+    it("should throw error if serverUrl is missing", async () => {
       const configContent = `
 sonarqube:
   projectKey: test-project
 `;
 
-      await writeFile(testConfigPath, configContent, 'utf-8');
+      await writeFile(testConfigPath, configContent, "utf-8");
 
-      await expect(ConfigLoader.loadSonarQubeConfig(testConfigPath)).rejects.toThrow(
-        'serverUrl',
-      );
+      await expect(ConfigLoader.loadSonarQubeConfig(testConfigPath)).rejects.toThrow("serverUrl");
     });
 
-    it('should throw error if projectKey is missing', async () => {
+    it("should throw error if projectKey is missing", async () => {
       const configContent = `
 sonarqube:
   serverUrl: http://localhost:9000
 `;
 
-      await writeFile(testConfigPath, configContent, 'utf-8');
+      await writeFile(testConfigPath, configContent, "utf-8");
 
-      await expect(ConfigLoader.loadSonarQubeConfig(testConfigPath)).rejects.toThrow(
-        'projectKey',
-      );
+      await expect(ConfigLoader.loadSonarQubeConfig(testConfigPath)).rejects.toThrow("projectKey");
     });
   });
 
-  describe('configExists', () => {
-    it('should return true if file exists', async () => {
-      await writeFile(testConfigPath, 'test: value', 'utf-8');
+  describe("configExists", () => {
+    it("should return true if file exists", async () => {
+      await writeFile(testConfigPath, "test: value", "utf-8");
 
       const exists = ConfigLoader.configExists(testConfigPath);
 
       expect(exists).toBe(true);
     });
 
-    it('should return false if file does not exist', () => {
-      const exists = ConfigLoader.configExists('/non/existent/path');
+    it("should return false if file does not exist", () => {
+      const exists = ConfigLoader.configExists("/non/existent/path");
 
       expect(exists).toBe(false);
     });
   });
 
-  describe('validation', () => {
-    it('should validate serverUrl as valid URL', async () => {
+  describe("validation", () => {
+    it("should validate serverUrl as valid URL", async () => {
       const configContent = `
 sonarqube:
   serverUrl: invalid-url
   projectKey: test-project
 `;
 
-      await writeFile(testConfigPath, configContent, 'utf-8');
+      await writeFile(testConfigPath, configContent, "utf-8");
 
-      await expect(ConfigLoader.loadConfig(testConfigPath)).rejects.toThrow(
-        'valid URL',
-      );
+      await expect(ConfigLoader.loadConfig(testConfigPath)).rejects.toThrow("valid URL");
     });
 
-    it('should validate batch settings', async () => {
+    it("should validate batch settings", async () => {
       const configContent = `
 sonarqube:
   serverUrl: http://localhost:9000
@@ -249,14 +241,12 @@ analysis:
     maxFilesPerBatch: 0
 `;
 
-      await writeFile(testConfigPath, configContent, 'utf-8');
+      await writeFile(testConfigPath, configContent, "utf-8");
 
-      await expect(ConfigLoader.loadConfig(testConfigPath)).rejects.toThrow(
-        'maxFilesPerBatch',
-      );
+      await expect(ConfigLoader.loadConfig(testConfigPath)).rejects.toThrow("maxFilesPerBatch");
     });
 
-    it('should validate cache TTL', async () => {
+    it("should validate cache TTL", async () => {
       const configContent = `
 sonarqube:
   serverUrl: http://localhost:9000
@@ -266,14 +256,12 @@ cache:
   ttl: -1
 `;
 
-      await writeFile(testConfigPath, configContent, 'utf-8');
+      await writeFile(testConfigPath, configContent, "utf-8");
 
-      await expect(ConfigLoader.loadConfig(testConfigPath)).rejects.toThrow(
-        'ttl',
-      );
+      await expect(ConfigLoader.loadConfig(testConfigPath)).rejects.toThrow("ttl");
     });
 
-    it('should validate output format', async () => {
+    it("should validate output format", async () => {
       const configContent = `
 sonarqube:
   serverUrl: http://localhost:9000
@@ -283,15 +271,13 @@ output:
   format: invalid-format
 `;
 
-      await writeFile(testConfigPath, configContent, 'utf-8');
+      await writeFile(testConfigPath, configContent, "utf-8");
 
-      await expect(ConfigLoader.loadConfig(testConfigPath)).rejects.toThrow(
-        'format',
-      );
+      await expect(ConfigLoader.loadConfig(testConfigPath)).rejects.toThrow("format");
     });
 
-    it('should accept valid output formats', async () => {
-      const formats = ['markdown', 'html', 'json'];
+    it("should accept valid output formats", async () => {
+      const formats = ["markdown", "html", "json"];
 
       for (const format of formats) {
         const configContent = `
@@ -303,7 +289,7 @@ output:
   format: ${format}
 `;
 
-        await writeFile(testConfigPath, configContent, 'utf-8');
+        await writeFile(testConfigPath, configContent, "utf-8");
 
         const config = await ConfigLoader.loadConfig(testConfigPath);
         expect(config.output?.format).toBe(format);

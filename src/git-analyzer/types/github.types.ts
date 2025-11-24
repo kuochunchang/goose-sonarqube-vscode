@@ -23,7 +23,7 @@ export interface GitHubPullRequest {
     sha: string;
   };
   /** PR state */
-  state: 'open' | 'closed';
+  state: "open" | "closed";
   /** PR author */
   user: {
     login: string;
@@ -41,7 +41,7 @@ export interface GitHubPRFile {
   /** File path */
   filename: string;
   /** Change status */
-  status: 'added' | 'removed' | 'modified' | 'renamed';
+  status: "added" | "removed" | "modified" | "renamed";
   /** Number of additions */
   additions: number;
   /** Number of deletions */
@@ -83,11 +83,11 @@ export interface PRAnalysisRequest {
   /** PR number */
   prNumber: number;
   /** Analysis types to perform */
-  analysisTypes?: Array<'quality' | 'security' | 'impact' | 'architecture'>;
+  analysisTypes?: Array<"quality" | "security" | "impact" | "architecture">;
   /** Whether to post result as comment */
   postComment?: boolean;
   /** Comment format */
-  commentFormat?: 'markdown' | 'html';
+  commentFormat?: "markdown" | "html";
 }
 
 /**
@@ -119,15 +119,15 @@ export interface PRAnalysisResult {
     /** Quality score (0-100) */
     qualityScore: number;
     /** Risk level */
-    riskLevel: 'critical' | 'high' | 'medium' | 'low';
+    riskLevel: "critical" | "high" | "medium" | "low";
     /** Detailed issues */
     issues: Array<{
       file: string;
       line: number;
-      severity: 'critical' | 'high' | 'medium' | 'low';
+      severity: "critical" | "high" | "medium" | "low";
       type: string;
       message: string;
-      source: 'sonarqube' | 'ai';
+      source: "sonarqube" | "ai";
     }>;
   };
   /** Comment ID (if posted) */
@@ -135,4 +135,3 @@ export interface PRAnalysisResult {
   /** Comment URL (if posted) */
   commentUrl?: string;
 }
-

@@ -2,12 +2,12 @@
  * GitHubService unit tests
  */
 
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { GitHubService } from '../services/GitHubService.js';
-import type { GitHubConfig, GitHubRepository } from '../types/github.types.js';
+import { describe, it, expect, vi, beforeEach } from "vitest";
+import { GitHubService } from "../services/GitHubService.js";
+import type { GitHubConfig, GitHubRepository } from "../types/github.types.js";
 
 // Mock @octokit/rest
-vi.mock('@octokit/rest', () => {
+vi.mock("@octokit/rest", () => {
   return {
     Octokit: vi.fn().mockImplementation(() => ({
       pulls: {
@@ -29,16 +29,16 @@ vi.mock('@octokit/rest', () => {
   };
 });
 
-describe('GitHubService', () => {
+describe("GitHubService", () => {
   let service: GitHubService;
   let mockOctokit: any;
   const config: GitHubConfig = {
-    token: 'test-token',
-    baseUrl: 'https://api.github.com',
+    token: "test-token",
+    baseUrl: "https://api.github.com",
   };
   const repository: GitHubRepository = {
-    owner: 'test-owner',
-    repo: 'test-repo',
+    owner: "test-owner",
+    repo: "test-repo",
   };
 
   beforeEach(() => {
@@ -46,18 +46,18 @@ describe('GitHubService', () => {
     mockOctokit = (service as any).octokit;
   });
 
-  describe('getPullRequest', () => {
-    it('should fetch PR metadata successfully', async () => {
+  describe("getPullRequest", () => {
+    it("should fetch PR metadata successfully", async () => {
       const mockPR = {
         number: 123,
-        title: 'Test PR',
-        body: 'Test description',
-        head: { ref: 'feature', sha: 'abc123' },
-        base: { ref: 'main', sha: 'def456' },
-        state: 'open',
-        user: { login: 'testuser' },
-        created_at: '2025-01-01T00:00:00Z',
-        updated_at: '2025-01-02T00:00:00Z',
+        title: "Test PR",
+        body: "Test description",
+        head: { ref: "feature", sha: "abc123" },
+        base: { ref: "main", sha: "def456" },
+        state: "open",
+        user: { login: "testuser" },
+        created_at: "2025-01-01T00:00:00Z",
+        updated_at: "2025-01-02T00:00:00Z",
       };
 
       mockOctokit.pulls.get.mockResolvedValue({ data: mockPR });
@@ -66,50 +66,50 @@ describe('GitHubService', () => {
 
       expect(result).toEqual({
         number: 123,
-        title: 'Test PR',
-        body: 'Test description',
-        head: { ref: 'feature', sha: 'abc123' },
-        base: { ref: 'main', sha: 'def456' },
-        state: 'open',
-        user: { login: 'testuser' },
-        created_at: '2025-01-01T00:00:00Z',
-        updated_at: '2025-01-02T00:00:00Z',
+        title: "Test PR",
+        body: "Test description",
+        head: { ref: "feature", sha: "abc123" },
+        base: { ref: "main", sha: "def456" },
+        state: "open",
+        user: { login: "testuser" },
+        created_at: "2025-01-01T00:00:00Z",
+        updated_at: "2025-01-02T00:00:00Z",
       });
 
       expect(mockOctokit.pulls.get).toHaveBeenCalledWith({
-        owner: 'test-owner',
-        repo: 'test-repo',
+        owner: "test-owner",
+        repo: "test-repo",
         pull_number: 123,
       });
     });
 
-    it('should handle PR not found error', async () => {
-      mockOctokit.pulls.get.mockRejectedValue(new Error('Not found'));
+    it("should handle PR not found error", async () => {
+      mockOctokit.pulls.get.mockRejectedValue(new Error("Not found"));
 
       await expect(service.getPullRequest(repository, 999)).rejects.toThrow(
-        'Failed to fetch PR #999'
+        "Failed to fetch PR #999"
       );
     });
   });
 
-  describe('getPullRequestFiles', () => {
-    it('should fetch PR files successfully', async () => {
+  describe("getPullRequestFiles", () => {
+    it("should fetch PR files successfully", async () => {
       const mockFiles = [
         {
-          filename: 'src/file1.ts',
-          status: 'modified',
+          filename: "src/file1.ts",
+          status: "modified",
           additions: 10,
           deletions: 5,
           changes: 15,
-          patch: '@@ -1,5 +1,10 @@',
+          patch: "@@ -1,5 +1,10 @@",
         },
         {
-          filename: 'src/file2.ts',
-          status: 'added',
+          filename: "src/file2.ts",
+          status: "added",
           additions: 20,
           deletions: 0,
           changes: 20,
-          patch: '@@ -0,0 +1,20 @@',
+          patch: "@@ -0,0 +1,20 @@",
         },
       ];
 
@@ -119,22 +119,22 @@ describe('GitHubService', () => {
 
       expect(result).toHaveLength(2);
       expect(result[0]).toEqual({
-        filename: 'src/file1.ts',
-        status: 'modified',
+        filename: "src/file1.ts",
+        status: "modified",
         additions: 10,
         deletions: 5,
         changes: 15,
-        patch: '@@ -1,5 +1,10 @@',
+        patch: "@@ -1,5 +1,10 @@",
         previous_filename: undefined,
       });
     });
 
-    it('should handle pagination correctly', async () => {
+    it("should handle pagination correctly", async () => {
       const page1 = Array(100)
         .fill(null)
         .map((_, i) => ({
           filename: `file${i}.ts`,
-          status: 'modified',
+          status: "modified",
           additions: 1,
           deletions: 1,
           changes: 2,
@@ -142,8 +142,8 @@ describe('GitHubService', () => {
 
       const page2 = [
         {
-          filename: 'file100.ts',
-          status: 'added',
+          filename: "file100.ts",
+          status: "added",
           additions: 10,
           deletions: 0,
           changes: 10,
@@ -161,8 +161,8 @@ describe('GitHubService', () => {
     });
   });
 
-  describe('getPullRequestDiff', () => {
-    it('should fetch PR diff successfully', async () => {
+  describe("getPullRequestDiff", () => {
+    it("should fetch PR diff successfully", async () => {
       const mockDiff = `diff --git a/file.ts b/file.ts
 index 123..456 100644
 --- a/file.ts
@@ -178,23 +178,23 @@ index 123..456 100644
 
       expect(result).toBe(mockDiff);
       expect(mockOctokit.pulls.get).toHaveBeenCalledWith({
-        owner: 'test-owner',
-        repo: 'test-repo',
+        owner: "test-owner",
+        repo: "test-repo",
         pull_number: 123,
-        mediaType: { format: 'diff' },
+        mediaType: { format: "diff" },
       });
     });
   });
 
-  describe('postComment', () => {
-    it('should post comment successfully', async () => {
+  describe("postComment", () => {
+    it("should post comment successfully", async () => {
       const mockComment = {
         id: 456,
-        html_url: 'https://github.com/test-owner/test-repo/pull/123#issuecomment-456',
+        html_url: "https://github.com/test-owner/test-repo/pull/123#issuecomment-456",
       };
 
       mockOctokit.users.getAuthenticated.mockResolvedValue({
-        data: { login: 'bot-user' },
+        data: { login: "bot-user" },
       });
 
       mockOctokit.issues.listComments.mockResolvedValue({ data: [] });
@@ -204,80 +204,80 @@ index 123..456 100644
       const result = await service.postComment({
         repository,
         prNumber: 123,
-        body: 'Test comment',
+        body: "Test comment",
         collapsePrevious: false,
       });
 
       expect(result).toEqual({
         id: 456,
-        url: 'https://github.com/test-owner/test-repo/pull/123#issuecomment-456',
+        url: "https://github.com/test-owner/test-repo/pull/123#issuecomment-456",
       });
 
       expect(mockOctokit.issues.createComment).toHaveBeenCalledWith({
-        owner: 'test-owner',
-        repo: 'test-repo',
+        owner: "test-owner",
+        repo: "test-repo",
         issue_number: 123,
-        body: 'Test comment',
+        body: "Test comment",
       });
     });
 
-    it('should collapse previous bot comments when requested', async () => {
+    it("should collapse previous bot comments when requested", async () => {
       const oldComment = {
         id: 111,
-        user: { login: 'bot-user' },
-        body: '# 🔍 Code Review Analysis\n\nOld analysis...',
+        user: { login: "bot-user" },
+        body: "# 🔍 Code Review Analysis\n\nOld analysis...",
       };
 
       mockOctokit.users.getAuthenticated.mockResolvedValue({
-        data: { login: 'bot-user' },
+        data: { login: "bot-user" },
       });
 
       mockOctokit.issues.listComments.mockResolvedValue({ data: [oldComment] });
       mockOctokit.issues.updateComment.mockResolvedValue({ data: {} });
       mockOctokit.issues.createComment.mockResolvedValue({
-        data: { id: 456, html_url: 'https://github.com/...' },
+        data: { id: 456, html_url: "https://github.com/..." },
       });
 
       await service.postComment({
         repository,
         prNumber: 123,
-        body: 'New comment',
+        body: "New comment",
         collapsePrevious: true,
       });
 
       expect(mockOctokit.issues.updateComment).toHaveBeenCalledWith(
         expect.objectContaining({
-          owner: 'test-owner',
-          repo: 'test-repo',
+          owner: "test-owner",
+          repo: "test-repo",
           comment_id: 111,
         })
       );
     });
   });
 
-  describe('updateComment', () => {
-    it('should update comment successfully', async () => {
+  describe("updateComment", () => {
+    it("should update comment successfully", async () => {
       mockOctokit.issues.updateComment.mockResolvedValue({ data: {} });
 
-      await service.updateComment(repository, 456, 'Updated comment');
+      await service.updateComment(repository, 456, "Updated comment");
 
       expect(mockOctokit.issues.updateComment).toHaveBeenCalledWith({
-        owner: 'test-owner',
-        repo: 'test-repo',
+        owner: "test-owner",
+        repo: "test-repo",
         comment_id: 456,
-        body: 'Updated comment',
+        body: "Updated comment",
       });
     });
   });
 
-  describe('hasWriteAccess', () => {
-    it('should return true for admin permission', async () => {
+  describe("hasWriteAccess", () => {
+    it("should return true for admin permission", async () => {
       mockOctokit.users.getAuthenticated.mockResolvedValue({
-        data: { login: 'test-user' },
+        data: { login: "test-user" },
       });
 
       mockOctokit.repos.getCollaboratorPermissionLevel.mockResolvedValue({
-        data: { permission: 'admin' },
+        data: { permission: "admin" },
       });
 
       const result = await service.hasWriteAccess(repository);
@@ -285,13 +285,13 @@ index 123..456 100644
       expect(result).toBe(true);
     });
 
-    it('should return true for write permission', async () => {
+    it("should return true for write permission", async () => {
       mockOctokit.users.getAuthenticated.mockResolvedValue({
-        data: { login: 'test-user' },
+        data: { login: "test-user" },
       });
 
       mockOctokit.repos.getCollaboratorPermissionLevel.mockResolvedValue({
-        data: { permission: 'write' },
+        data: { permission: "write" },
       });
 
       const result = await service.hasWriteAccess(repository);
@@ -299,13 +299,13 @@ index 123..456 100644
       expect(result).toBe(true);
     });
 
-    it('should return false for read permission', async () => {
+    it("should return false for read permission", async () => {
       mockOctokit.users.getAuthenticated.mockResolvedValue({
-        data: { login: 'test-user' },
+        data: { login: "test-user" },
       });
 
       mockOctokit.repos.getCollaboratorPermissionLevel.mockResolvedValue({
-        data: { permission: 'read' },
+        data: { permission: "read" },
       });
 
       const result = await service.hasWriteAccess(repository);
@@ -313,8 +313,8 @@ index 123..456 100644
       expect(result).toBe(false);
     });
 
-    it('should return false on error', async () => {
-      mockOctokit.users.getAuthenticated.mockRejectedValue(new Error('Unauthorized'));
+    it("should return false on error", async () => {
+      mockOctokit.users.getAuthenticated.mockRejectedValue(new Error("Unauthorized"));
 
       const result = await service.hasWriteAccess(repository);
 
@@ -322,30 +322,29 @@ index 123..456 100644
     });
   });
 
-  describe('validateConnection', () => {
-    it('should validate connection successfully', async () => {
+  describe("validateConnection", () => {
+    it("should validate connection successfully", async () => {
       mockOctokit.users.getAuthenticated.mockResolvedValue({
-        data: { login: 'test-user' },
+        data: { login: "test-user" },
       });
 
       const result = await service.validateConnection();
 
       expect(result).toEqual({
         valid: true,
-        user: 'test-user',
+        user: "test-user",
       });
     });
 
-    it('should handle invalid token', async () => {
-      mockOctokit.users.getAuthenticated.mockRejectedValue(new Error('Bad credentials'));
+    it("should handle invalid token", async () => {
+      mockOctokit.users.getAuthenticated.mockRejectedValue(new Error("Bad credentials"));
 
       const result = await service.validateConnection();
 
       expect(result).toEqual({
         valid: false,
-        error: 'Bad credentials',
+        error: "Bad credentials",
       });
     });
   });
 });
-

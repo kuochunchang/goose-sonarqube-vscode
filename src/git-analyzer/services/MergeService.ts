@@ -1,6 +1,6 @@
 /**
  * MergeService - Merges SonarQube and AI analysis results
- * 
+ *
  * Responsibilities:
  * - Issue deduplication (SonarQube + AI)
  * - Severity mapping (SonarQube severity → unified severity)
@@ -17,18 +17,18 @@ import type {
   AIAnalysisResult,
   MergedAnalysisResult,
   ChangeAnalysisResult,
-} from '../types/analysis.types.js';
+} from "../types/analysis.types.js";
 import type {
   SonarQubeAnalysisResult,
   SonarQubeIssue,
   SonarQubeSeverity,
   SonarQubeIssueType,
-} from '../types/sonarqube.types.js';
+} from "../types/sonarqube.types.js";
 
 /**
  * Deduplication strategy
  */
-export type DeduplicationStrategy = 'exact' | 'fuzzy' | 'location';
+export type DeduplicationStrategy = "exact" | "fuzzy" | "location";
 
 /**
  * Merge configuration
@@ -70,7 +70,7 @@ export class MergeService {
 
   constructor(config: MergeConfig = {}) {
     this.config = {
-      deduplicationStrategy: config.deduplicationStrategy ?? 'fuzzy',
+      deduplicationStrategy: config.deduplicationStrategy ?? "fuzzy",
       fuzzyMatchThreshold: config.fuzzyMatchThreshold ?? 0.8,
       preferSonarQube: config.preferSonarQube ?? true,
       includeRawResults: config.includeRawResults ?? false,
@@ -105,11 +105,7 @@ export class MergeService {
     const fileAnalyses = this.groupIssuesByFile(sortedIssues, aiResult.fileAnalyses);
 
     // Calculate overall impact
-    const impactAnalysis = this.calculateImpact(
-      sortedIssues,
-      aiResult.impactAnalysis,
-      sonarResult
-    );
+    const impactAnalysis = this.calculateImpact(sortedIssues, aiResult.impactAnalysis, sonarResult);
 
     // Build merged result
     const mergedResult: MergedAnalysisResult = {
@@ -140,7 +136,7 @@ export class MergeService {
    */
   private convertSonarQubeIssue(issue: SonarQubeIssue): CodeIssue {
     return {
-      source: 'sonarqube',
+      source: "sonarqube",
       severity: this.mapSonarQubeSeverity(issue.severity),
       type: this.mapSonarQubeType(issue.type),
       file: this.extractFilePath(issue.component),
@@ -157,13 +153,13 @@ export class MergeService {
    */
   private mapSonarQubeSeverity(severity: SonarQubeSeverity): IssueSeverity {
     const mapping: Record<SonarQubeSeverity, IssueSeverity> = {
-      BLOCKER: 'critical',
-      CRITICAL: 'critical',
-      MAJOR: 'high',
-      MINOR: 'medium',
-      INFO: 'info',
+      BLOCKER: "critical",
+      CRITICAL: "critical",
+      MAJOR: "high",
+      MINOR: "medium",
+      INFO: "info",
     };
-    return mapping[severity] ?? 'medium';
+    return mapping[severity] ?? "medium";
   }
 
   /**
@@ -171,12 +167,12 @@ export class MergeService {
    */
   private mapSonarQubeType(type: SonarQubeIssueType): IssueType {
     const mapping: Record<SonarQubeIssueType, IssueType> = {
-      BUG: 'bug',
-      VULNERABILITY: 'vulnerability',
-      CODE_SMELL: 'code-smell',
-      SECURITY_HOTSPOT: 'security-hotspot',
+      BUG: "bug",
+      VULNERABILITY: "vulnerability",
+      CODE_SMELL: "code-smell",
+      SECURITY_HOTSPOT: "security-hotspot",
     };
-    return mapping[type] ?? 'code-smell';
+    return mapping[type] ?? "code-smell";
   }
 
   /**
@@ -184,7 +180,7 @@ export class MergeService {
    * Component format: "project:path/to/file.ts"
    */
   private extractFilePath(component: string): string {
-    const parts = component.split(':');
+    const parts = component.split(":");
     return parts.length > 1 ? parts[1] : component;
   }
 
@@ -199,10 +195,10 @@ export class MergeService {
     }
 
     if (issue.tags && issue.tags.length > 0) {
-      parts.push(`Tags: ${issue.tags.join(', ')}`);
+      parts.push(`Tags: ${issue.tags.join(", ")}`);
     }
 
-    return parts.join('\n');
+    return parts.join("\n");
   }
 
   /**
@@ -216,11 +212,11 @@ export class MergeService {
     const unit = match[2];
 
     switch (unit) {
-      case 'min':
+      case "min":
         return value;
-      case 'h':
+      case "h":
         return value * 60;
-      case 'd':
+      case "d":
         return value * 60 * 8; // 8 hours per day
       default:
         return 0;
@@ -266,13 +262,13 @@ export class MergeService {
     // Apply deduplication strategy
     let uniqueIssues: CodeIssue[];
     switch (this.config.deduplicationStrategy) {
-      case 'exact':
+      case "exact":
         uniqueIssues = this.deduplicateExact(aiIssues, sonarIssues);
         break;
-      case 'fuzzy':
+      case "fuzzy":
         uniqueIssues = this.deduplicateFuzzy(aiIssues, sonarIssues);
         break;
-      case 'location':
+      case "location":
         uniqueIssues = this.deduplicateByLocation(aiIssues, sonarIssues);
         break;
       default:
@@ -453,10 +449,10 @@ export class MergeService {
       const typeOrder: Record<IssueType, number> = {
         vulnerability: 0,
         bug: 1,
-        'security-hotspot': 2,
-        'breaking-change': 3,
+        "security-hotspot": 2,
+        "breaking-change": 3,
         performance: 4,
-        'code-smell': 5,
+        "code-smell": 5,
         architecture: 6,
         testing: 7,
       };
@@ -473,10 +469,7 @@ export class MergeService {
   /**
    * Group issues by file and merge with existing file analyses
    */
-  private groupIssuesByFile(
-    issues: CodeIssue[],
-    existingAnalyses: FileAnalysis[]
-  ): FileAnalysis[] {
+  private groupIssuesByFile(issues: CodeIssue[], existingAnalyses: FileAnalysis[]): FileAnalysis[] {
     // Create a map of existing analyses
     const analysisMap = new Map<string, FileAnalysis>();
     for (const analysis of existingAnalyses) {
@@ -504,7 +497,7 @@ export class MergeService {
         // Create new analysis for files not in AI results
         mergedAnalyses.push({
           file,
-          changeType: 'unknown',
+          changeType: "unknown",
           issues: fileIssues,
           summary: `${fileIssues.length} issue(s) found`,
           linesChanged: 0,
@@ -534,18 +527,18 @@ export class MergeService {
     sonarResult?: SonarQubeAnalysisResult
   ): ImpactAnalysis {
     // Calculate risk level based on issue severity
-    const criticalCount = issues.filter((i) => i.severity === 'critical').length;
-    const highCount = issues.filter((i) => i.severity === 'high').length;
+    const criticalCount = issues.filter((i) => i.severity === "critical").length;
+    const highCount = issues.filter((i) => i.severity === "high").length;
 
-    let riskLevel: ImpactAnalysis['riskLevel'];
+    let riskLevel: ImpactAnalysis["riskLevel"];
     if (criticalCount > 0) {
-      riskLevel = 'critical';
+      riskLevel = "critical";
     } else if (highCount >= 4) {
-      riskLevel = 'high';
+      riskLevel = "high";
     } else if (highCount > 0 || issues.length > 10) {
-      riskLevel = 'medium';
+      riskLevel = "medium";
     } else {
-      riskLevel = 'low';
+      riskLevel = "low";
     }
 
     // Calculate quality score
@@ -601,7 +594,7 @@ export class MergeService {
     totalIssues: number;
     issuesBySeverity: Record<IssueSeverity, number>;
     issuesByType: Record<IssueType, number>;
-    issuesBySource: Record<'sonarqube' | 'ai', number>;
+    issuesBySource: Record<"sonarqube" | "ai", number>;
     filesAnalyzed: number;
     qualityScore: number;
     riskLevel: string;
@@ -619,15 +612,15 @@ export class MergeService {
     const issuesByType: Record<IssueType, number> = {
       bug: 0,
       vulnerability: 0,
-      'code-smell': 0,
-      'security-hotspot': 0,
-      'breaking-change': 0,
+      "code-smell": 0,
+      "security-hotspot": 0,
+      "breaking-change": 0,
       performance: 0,
       architecture: 0,
       testing: 0,
     };
 
-    const issuesBySource: Record<'sonarqube' | 'ai', number> = {
+    const issuesBySource: Record<"sonarqube" | "ai", number> = {
       sonarqube: 0,
       ai: 0,
     };
@@ -635,7 +628,7 @@ export class MergeService {
     for (const issue of allIssues) {
       issuesBySeverity[issue.severity]++;
       issuesByType[issue.type]++;
-      if (issue.source === 'sonarqube' || issue.source === 'ai') {
+      if (issue.source === "sonarqube" || issue.source === "ai") {
         issuesBySource[issue.source]++;
       }
     }
@@ -651,4 +644,3 @@ export class MergeService {
     };
   }
 }
-

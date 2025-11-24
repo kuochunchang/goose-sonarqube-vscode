@@ -1,18 +1,18 @@
 /**
  * ReportExporter - Export analysis reports in various formats
- * 
+ *
  * Supports:
  * - Markdown format (human-readable)
  * - HTML format (with charts and styling)
  * - JSON format (CI/CD integration)
  */
 
-import type { MergedAnalysisResult, CodeIssue, IssueSeverity } from '../types/analysis.types.js';
+import type { MergedAnalysisResult, CodeIssue, IssueSeverity } from "../types/analysis.types.js";
 
 /**
  * Export format
  */
-export type ExportFormat = 'markdown' | 'html' | 'json';
+export type ExportFormat = "markdown" | "html" | "json";
 
 /**
  * Export options
@@ -57,19 +57,15 @@ export class ReportExporter {
   /**
    * Export report in specified format
    */
-  export(
-    result: MergedAnalysisResult,
-    format: ExportFormat,
-    options: ExportOptions = {}
-  ): string {
+  export(result: MergedAnalysisResult, format: ExportFormat, options: ExportOptions = {}): string {
     const opts = { ...DEFAULT_OPTIONS, ...options };
 
     switch (format) {
-      case 'markdown':
+      case "markdown":
         return this.exportMarkdown(result, opts);
-      case 'html':
+      case "html":
         return this.exportHTML(result, opts);
-      case 'json':
+      case "json":
         return this.exportJSON(result, opts);
       default:
         throw new Error(`Unsupported export format: ${format}`);
@@ -83,7 +79,7 @@ export class ReportExporter {
     const sections: string[] = [];
 
     // Title
-    sections.push('# Code Review Analysis Report\n');
+    sections.push("# Code Review Analysis Report\n");
     sections.push(`**Generated**: ${new Date(result.timestamp).toLocaleString()}\n`);
 
     if (result.duration) {
@@ -115,14 +111,14 @@ export class ReportExporter {
       sections.push(this.generateMarkdownIssues(result, options));
     }
 
-    return sections.join('\n');
+    return sections.join("\n");
   }
 
   /**
    * Generate Markdown summary section
    */
   private generateMarkdownSummary(result: MergedAnalysisResult): string {
-    const lines: string[] = ['\n## Summary\n'];
+    const lines: string[] = ["\n## Summary\n"];
 
     lines.push(`**Change Type**: ${result.changeType}`);
     lines.push(`**Files Changed**: ${result.summary.filesChanged}`);
@@ -131,18 +127,18 @@ export class ReportExporter {
     lines.push(`**Quality Score**: ${result.impactAnalysis.qualityScore}/100`);
     lines.push(`**Risk Level**: ${this.formatRiskLevel(result.impactAnalysis.riskLevel)}\n`);
 
-    return lines.join('\n');
+    return lines.join("\n");
   }
 
   /**
    * Generate Markdown statistics section
    */
   private generateMarkdownStatistics(result: MergedAnalysisResult): string {
-    const lines: string[] = ['\n## Statistics\n'];
+    const lines: string[] = ["\n## Statistics\n"];
     const allIssues = result.fileAnalyses.flatMap((f) => f.issues);
 
     // Issues by severity
-    lines.push('### Issues by Severity\n');
+    lines.push("### Issues by Severity\n");
     const bySeverity = this.groupBySeverity(allIssues);
     for (const [severity, issues] of Object.entries(bySeverity)) {
       if (issues.length > 0) {
@@ -151,7 +147,7 @@ export class ReportExporter {
     }
 
     // Issues by type
-    lines.push('\n### Issues by Type\n');
+    lines.push("\n### Issues by Type\n");
     const byType = this.groupByType(allIssues);
     for (const [type, issues] of Object.entries(byType)) {
       if (issues.length > 0) {
@@ -160,62 +156,62 @@ export class ReportExporter {
     }
 
     // Issues by source
-    lines.push('\n### Issues by Source\n');
-    const sonarCount = allIssues.filter((i) => i.source === 'sonarqube').length;
-    const aiCount = allIssues.filter((i) => i.source === 'ai').length;
+    lines.push("\n### Issues by Source\n");
+    const sonarCount = allIssues.filter((i) => i.source === "sonarqube").length;
+    const aiCount = allIssues.filter((i) => i.source === "ai").length;
     lines.push(`- **SonarQube**: ${sonarCount}`);
     lines.push(`- **AI Analysis**: ${aiCount}\n`);
 
-    return lines.join('\n');
+    return lines.join("\n");
   }
 
   /**
    * Generate Markdown impact section
    */
   private generateMarkdownImpact(result: MergedAnalysisResult): string {
-    const lines: string[] = ['\n## Impact Analysis\n'];
+    const lines: string[] = ["\n## Impact Analysis\n"];
     const impact = result.impactAnalysis;
 
     if (impact.affectedModules.length > 0) {
-      lines.push('### Affected Modules\n');
+      lines.push("### Affected Modules\n");
       for (const module of impact.affectedModules) {
         lines.push(`- ${module}`);
       }
-      lines.push('');
+      lines.push("");
     }
 
     if (impact.breakingChanges.length > 0) {
-      lines.push('### ⚠️ Breaking Changes\n');
+      lines.push("### ⚠️ Breaking Changes\n");
       for (const change of impact.breakingChanges) {
         lines.push(`- ${change}`);
       }
-      lines.push('');
+      lines.push("");
     }
 
     if (impact.deploymentRisks.length > 0) {
-      lines.push('### Deployment Risks\n');
+      lines.push("### Deployment Risks\n");
       for (const risk of impact.deploymentRisks) {
         lines.push(`- ${risk}`);
       }
-      lines.push('');
+      lines.push("");
     }
 
     if (impact.testingRecommendations.length > 0) {
-      lines.push('### Testing Recommendations\n');
+      lines.push("### Testing Recommendations\n");
       for (const rec of impact.testingRecommendations) {
         lines.push(`- ${rec}`);
       }
-      lines.push('');
+      lines.push("");
     }
 
-    return lines.join('\n');
+    return lines.join("\n");
   }
 
   /**
    * Generate Markdown deduplication section
    */
   private generateMarkdownDeduplication(result: MergedAnalysisResult): string {
-    const lines: string[] = ['\n## Deduplication\n'];
+    const lines: string[] = ["\n## Deduplication\n"];
     const info = result.deduplicationInfo!;
 
     lines.push(`- **Total Issues Found**: ${info.totalIssues}`);
@@ -227,7 +223,7 @@ export class ReportExporter {
       lines.push(`- **Deduplication Rate**: ${dedupeRate}%\n`);
     }
 
-    return lines.join('\n');
+    return lines.join("\n");
   }
 
   /**
@@ -237,16 +233,15 @@ export class ReportExporter {
     result: MergedAnalysisResult,
     options: Required<ExportOptions>
   ): string {
-    const lines: string[] = ['\n## Issues\n'];
+    const lines: string[] = ["\n## Issues\n"];
     const allIssues = result.fileAnalyses.flatMap((f) => f.issues);
 
     if (allIssues.length === 0) {
-      lines.push('✅ No issues found!\n');
-      return lines.join('\n');
+      lines.push("✅ No issues found!\n");
+      return lines.join("\n");
     }
 
-    const issuesToShow =
-      options.maxIssues > 0 ? allIssues.slice(0, options.maxIssues) : allIssues;
+    const issuesToShow = options.maxIssues > 0 ? allIssues.slice(0, options.maxIssues) : allIssues;
 
     if (options.groupByFile) {
       lines.push(this.generateMarkdownIssuesByFile(result, issuesToShow));
@@ -262,16 +257,13 @@ export class ReportExporter {
       );
     }
 
-    return lines.join('\n');
+    return lines.join("\n");
   }
 
   /**
    * Generate issues grouped by file
    */
-  private generateMarkdownIssuesByFile(
-    result: MergedAnalysisResult,
-    issues: CodeIssue[]
-  ): string {
+  private generateMarkdownIssuesByFile(result: MergedAnalysisResult, issues: CodeIssue[]): string {
     const lines: string[] = [];
     const issuesByFile = new Map<string, CodeIssue[]>();
 
@@ -286,10 +278,10 @@ export class ReportExporter {
       for (const issue of fileIssues) {
         lines.push(this.formatMarkdownIssue(issue));
       }
-      lines.push('');
+      lines.push("");
     }
 
-    return lines.join('\n');
+    return lines.join("\n");
   }
 
   /**
@@ -299,7 +291,7 @@ export class ReportExporter {
     const lines: string[] = [];
     const bySeverity = this.groupBySeverity(issues);
 
-    const severityOrder: IssueSeverity[] = ['critical', 'high', 'medium', 'low', 'info'];
+    const severityOrder: IssueSeverity[] = ["critical", "high", "medium", "low", "info"];
 
     for (const severity of severityOrder) {
       const severityIssues = bySeverity[severity];
@@ -308,11 +300,11 @@ export class ReportExporter {
         for (const issue of severityIssues) {
           lines.push(this.formatMarkdownIssue(issue));
         }
-        lines.push('');
+        lines.push("");
       }
     }
 
-    return lines.join('\n');
+    return lines.join("\n");
   }
 
   /**
@@ -323,7 +315,7 @@ export class ReportExporter {
     for (const issue of issues) {
       lines.push(this.formatMarkdownIssue(issue));
     }
-    return lines.join('\n');
+    return lines.join("\n");
   }
 
   /**
@@ -331,8 +323,8 @@ export class ReportExporter {
    */
   private formatMarkdownIssue(issue: CodeIssue): string {
     const icon = this.getSeverityIcon(issue.severity);
-    const location = issue.line > 0 ? `Line ${issue.line}` : 'File-level';
-    const source = issue.source === 'sonarqube' ? '🔍 SonarQube' : '🤖 AI';
+    const location = issue.line > 0 ? `Line ${issue.line}` : "File-level";
+    const source = issue.source === "sonarqube" ? "🔍 SonarQube" : "🤖 AI";
 
     let text = `${icon} **[${this.formatSeverity(issue.severity)}]** ${issue.message}\n`;
     text += `  - **Location**: ${issue.file}:${location}\n`;
@@ -440,8 +432,8 @@ export class ReportExporter {
         bySeverity: this.countBySeverity(allIssues),
         byType: this.countByType(allIssues),
         bySource: {
-          sonarqube: allIssues.filter((i) => i.source === 'sonarqube').length,
-          ai: allIssues.filter((i) => i.source === 'ai').length,
+          sonarqube: allIssues.filter((i) => i.source === "sonarqube").length,
+          ai: allIssues.filter((i) => i.source === "ai").length,
         },
       };
     }
@@ -524,41 +516,40 @@ export class ReportExporter {
 
   private formatType(type: string): string {
     return type
-      .split('-')
+      .split("-")
       .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-      .join(' ');
+      .join(" ");
   }
 
   private formatRiskLevel(level: string): string {
     const emoji: Record<string, string> = {
-      critical: '🔴 Critical',
-      high: '🟠 High',
-      medium: '🟡 Medium',
-      low: '🟢 Low',
+      critical: "🔴 Critical",
+      high: "🟠 High",
+      medium: "🟡 Medium",
+      low: "🟢 Low",
     };
     return emoji[level] || level;
   }
 
   private getSeverityIcon(severity: IssueSeverity): string {
     const icons: Record<IssueSeverity, string> = {
-      critical: '🔴',
-      high: '🟠',
-      medium: '🟡',
-      low: '🔵',
-      info: 'ℹ️',
+      critical: "🔴",
+      high: "🟠",
+      medium: "🟡",
+      low: "🔵",
+      info: "ℹ️",
     };
     return icons[severity];
   }
 
   private escapeHtml(text: string): string {
     const map: Record<string, string> = {
-      '&': '&amp;',
-      '<': '&lt;',
-      '>': '&gt;',
-      '"': '&quot;',
-      "'": '&#039;',
+      "&": "&amp;",
+      "<": "&lt;",
+      ">": "&gt;",
+      '"': "&quot;",
+      "'": "&#039;",
     };
     return text.replace(/[&<>"']/g, (m) => map[m]);
   }
 }
-

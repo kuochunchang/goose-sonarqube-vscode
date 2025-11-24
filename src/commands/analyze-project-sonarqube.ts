@@ -4,21 +4,21 @@
  * VS Code command for analyzing entire project using SonarQube.
  */
 
-import * as vscode from 'vscode';
+import * as vscode from "vscode";
 import {
   ProjectAnalysisService,
   type ProjectAnalysisOptions,
   type ProjectAnalysisResult,
-} from '../git-analyzer/index.js';
-import { SonarQubeConfigService } from '../services/sonarqube-config-service.js';
+} from "../git-analyzer/index.js";
+import { SonarQubeConfigService } from "../services/sonarqube-config-service.js";
 
 /**
  * Get quality status emoji based on status string
  */
 function getQualityStatusEmoji(status: string): string {
-  if (status === 'OK') return '✓';
-  if (status === 'ERROR') return '✗';
-  return '⚠';
+  if (status === "OK") return "✓";
+  if (status === "ERROR") return "✗";
+  return "⚠";
 }
 
 /**
@@ -28,9 +28,9 @@ function displayAnalysisHeader(
   outputChannel: vscode.OutputChannel,
   result: ProjectAnalysisResult
 ): void {
-  outputChannel.appendLine('\n' + '='.repeat(60));
-  outputChannel.appendLine('ANALYSIS COMPLETE');
-  outputChannel.appendLine('='.repeat(60));
+  outputChannel.appendLine("\n" + "=".repeat(60));
+  outputChannel.appendLine("ANALYSIS COMPLETE");
+  outputChannel.appendLine("=".repeat(60));
   outputChannel.appendLine(`\nProject: ${result.projectKey}`);
   outputChannel.appendLine(`Analysis Date: ${result.analysisDate}`);
   outputChannel.appendLine(`Execution Time: ${result.scanResult.executionTime}ms`);
@@ -52,7 +52,7 @@ function displayAnalysisSummary(
   outputChannel: vscode.OutputChannel,
   result: ProjectAnalysisResult
 ): void {
-  outputChannel.appendLine('\nSummary:');
+  outputChannel.appendLine("\nSummary:");
   outputChannel.appendLine(`  Total Issues: ${result.summary.totalIssues}`);
   outputChannel.appendLine(`  Blocker: ${result.summary.blockerIssues}`);
   outputChannel.appendLine(`  Critical: ${result.summary.criticalIssues}`);
@@ -71,18 +71,18 @@ function displayAnalysisMetrics(
 ): void {
   if (!result.analysisResult) return;
 
-  outputChannel.appendLine('\nMetrics:');
+  outputChannel.appendLine("\nMetrics:");
   outputChannel.appendLine(
-    `  Lines of Code: ${result.analysisResult.metrics.linesOfCode || 'N/A'}`
+    `  Lines of Code: ${result.analysisResult.metrics.linesOfCode || "N/A"}`
   );
   outputChannel.appendLine(
-    `  Coverage: ${result.analysisResult.metrics.coverage?.toFixed(1) || 'N/A'}%`
+    `  Coverage: ${result.analysisResult.metrics.coverage?.toFixed(1) || "N/A"}%`
   );
   outputChannel.appendLine(
-    `  Duplicated Lines: ${result.analysisResult.metrics.duplicatedLinesDensity?.toFixed(1) || 'N/A'}%`
+    `  Duplicated Lines: ${result.analysisResult.metrics.duplicatedLinesDensity?.toFixed(1) || "N/A"}%`
   );
   outputChannel.appendLine(
-    `  Technical Debt Ratio: ${result.analysisResult.metrics.technicalDebtRatio?.toFixed(1) || 'N/A'}%`
+    `  Technical Debt Ratio: ${result.analysisResult.metrics.technicalDebtRatio?.toFixed(1) || "N/A"}%`
   );
 }
 
@@ -96,7 +96,7 @@ function displayAnalysisResults(
   displayAnalysisHeader(outputChannel, result);
   displayAnalysisSummary(outputChannel, result);
   displayAnalysisMetrics(outputChannel, result);
-  outputChannel.appendLine('\n' + '='.repeat(60) + '\n');
+  outputChannel.appendLine("\n" + "=".repeat(60) + "\n");
 }
 
 /**
@@ -105,7 +105,7 @@ function displayAnalysisResults(
 function showCompletionNotification(result: ProjectAnalysisResult): void {
   const message = `Analysis complete! Found ${result.summary.totalIssues} issues (${result.summary.blockerIssues} blocker, ${result.summary.criticalIssues} critical)`;
 
-  if (result.qualityStatus === 'ERROR') {
+  if (result.qualityStatus === "ERROR") {
     vscode.window.showWarningMessage(message);
   } else {
     vscode.window.showInformationMessage(message);
@@ -116,9 +116,9 @@ function showCompletionNotification(result: ProjectAnalysisResult): void {
  * Offer to open SonarQube dashboard
  */
 async function offerDashboardOpen(dashboardUrl: string): Promise<void> {
-  const openDashboard = 'Open Dashboard';
+  const openDashboard = "Open Dashboard";
   const action = await vscode.window.showInformationMessage(
-    'View results in SonarQube dashboard?',
+    "View results in SonarQube dashboard?",
     openDashboard
   );
 
@@ -134,7 +134,7 @@ async function testConnection(
   service: ProjectAnalysisService,
   outputChannel: vscode.OutputChannel
 ): Promise<void> {
-  outputChannel.appendLine('Testing connection to SonarQube server...');
+  outputChannel.appendLine("Testing connection to SonarQube server...");
   const connectionTest = await service.testConnection();
 
   if (!connectionTest.success) {
@@ -162,8 +162,8 @@ async function executeAnalysis(
     includeIssues: true,
   };
 
-  progress.report({ message: 'Running scanner...' });
-  outputChannel.appendLine('Executing SonarQube scanner...');
+  progress.report({ message: "Running scanner..." });
+  outputChannel.appendLine("Executing SonarQube scanner...");
 
   return await service.analyzeAndExport(options);
 }
@@ -175,12 +175,12 @@ async function runAnalysis(
   context: vscode.ExtensionContext,
   outputChannel: vscode.OutputChannel
 ): Promise<void> {
-  outputChannel.appendLine('Starting SonarQube project analysis...\n');
+  outputChannel.appendLine("Starting SonarQube project analysis...\n");
 
   // Get workspace folder
   const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
   if (!workspaceFolder) {
-    vscode.window.showErrorMessage('No workspace folder open');
+    vscode.window.showErrorMessage("No workspace folder open");
     return;
   }
 
@@ -192,14 +192,14 @@ async function runAnalysis(
   const sonarQubeConfig = await configService.getSonarQubeConfig();
 
   if (!sonarQubeConfig) {
-    const setupAction = 'Setup SonarQube';
+    const setupAction = "Setup SonarQube";
     const result = await vscode.window.showErrorMessage(
-      'SonarQube is not configured. Please add a connection and bind a project.',
+      "SonarQube is not configured. Please add a connection and bind a project.",
       setupAction
     );
 
     if (result === setupAction) {
-      await vscode.commands.executeCommand('gooseCodeReview.addSonarQubeConnection');
+      await vscode.commands.executeCommand("gooseCodeReview.addSonarQubeConnection");
     }
     return;
   }
@@ -211,16 +211,16 @@ async function runAnalysis(
   await vscode.window.withProgress(
     {
       location: vscode.ProgressLocation.Notification,
-      title: 'Analyzing project with SonarQube',
+      title: "Analyzing project with SonarQube",
       cancellable: false,
     },
     async (progress) => {
       // Initialize service
-      progress.report({ message: 'Initializing...' });
+      progress.report({ message: "Initializing..." });
       const projectAnalysisService = new ProjectAnalysisService(sonarQubeConfig);
 
       // Test connection
-      progress.report({ message: 'Testing connection...' });
+      progress.report({ message: "Testing connection..." });
       await testConnection(projectAnalysisService, outputChannel);
 
       // Execute analysis and export to temp file
@@ -232,7 +232,7 @@ async function runAnalysis(
       );
 
       // Display results
-      progress.report({ message: 'Generating report...' });
+      progress.report({ message: "Generating report..." });
       displayAnalysisResults(outputChannel, result);
 
       // Display export path
@@ -255,14 +255,14 @@ async function runAnalysis(
 export function registerAnalyzeProjectSonarQubeCommand(
   context: vscode.ExtensionContext
 ): vscode.Disposable {
-  return vscode.commands.registerCommand('gooseCodeReview.analyzeProjectSonarQube', async () => {
-    const outputChannel = vscode.window.createOutputChannel('Goose: SonarQube Project Analysis');
+  return vscode.commands.registerCommand("gooseCodeReview.analyzeProjectSonarQube", async () => {
+    const outputChannel = vscode.window.createOutputChannel("Goose: SonarQube Project Analysis");
     outputChannel.show();
 
     try {
       await runAnalysis(context, outputChannel);
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error during analysis';
+      const errorMessage = error instanceof Error ? error.message : "Unknown error during analysis";
       outputChannel.appendLine(`\n✗ Error: ${errorMessage}\n`);
       vscode.window.showErrorMessage(`SonarQube analysis failed: ${errorMessage}`);
     }
