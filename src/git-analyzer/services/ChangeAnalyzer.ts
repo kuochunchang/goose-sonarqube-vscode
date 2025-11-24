@@ -3,23 +3,23 @@
  * Provides batch processing and token-aware analysis
  */
 
-import type { GitChanges } from '../types/git.types.js';
+import type { GitChanges } from "../types/git.types.js";
 import type {
   AnalysisOptions,
   ChangeAnalysisResult,
   FileAnalysis,
   ImpactAnalysis,
   AIAnalysisResult,
-} from '../types/analysis.types.js';
-import { GitService } from './GitService.js';
-import { DiffParser, type ParsedFileChange } from '../utils/DiffParser.js';
-import { TokenCounter } from '../utils/TokenCounter.js';
+} from "../types/analysis.types.js";
+import { GitService } from "./GitService.js";
+import { DiffParser, type ParsedFileChange } from "../utils/DiffParser.js";
+import { TokenCounter } from "../utils/TokenCounter.js";
 import {
   buildQualityAnalysisPrompt,
   buildSecurityAnalysisPrompt,
   buildImpactAnalysisPrompt,
   buildArchitectureReviewPrompt,
-} from './AIPrompts.js';
+} from "./AIPrompts.js";
 
 /**
  * AI provider interface (minimal definition for git-analyzer package)
@@ -47,7 +47,7 @@ export interface ChangeAnalyzerConfig {
 /**
  * Analysis type enum
  */
-export type AnalysisType = 'quality' | 'security' | 'impact' | 'architecture';
+export type AnalysisType = "quality" | "security" | "impact" | "architecture";
 
 /**
  * Change analyzer service
@@ -77,9 +77,7 @@ export class ChangeAnalyzer {
    * @param options - Analysis options
    * @returns Complete analysis result
    */
-  async analyzeWorkingDirectory(
-    options: AnalysisOptions = {}
-  ): Promise<ChangeAnalysisResult> {
+  async analyzeWorkingDirectory(options: AnalysisOptions = {}): Promise<ChangeAnalysisResult> {
     const startTime = Date.now();
 
     const changes = await this.gitService.getWorkingDirectoryChanges();
@@ -140,7 +138,7 @@ export class ChangeAnalyzer {
   private async performAnalysis(
     changes: GitChanges,
     options: AnalysisOptions
-  ): Promise<Omit<ChangeAnalysisResult, 'changeType' | 'summary' | 'duration'>> {
+  ): Promise<Omit<ChangeAnalysisResult, "changeType" | "summary" | "duration">> {
     const parsedChanges = this.diffParser.parseGitChanges(changes);
 
     const fileAnalyses: FileAnalysis[] = [];
@@ -158,11 +156,10 @@ export class ChangeAnalyzer {
 
     if (options.checkArchitecture) {
       const architectureReview = await this.analyzeArchitecture(parsedChanges);
-      console.log('Architecture Review:', architectureReview);
+      console.log("Architecture Review:", architectureReview);
     }
 
-    const commitMessages =
-      changes.type !== 'working-directory' ? changes.commits : undefined;
+    const commitMessages = changes.type !== "working-directory" ? changes.commits : undefined;
     const impactResults = await this.analyzeImpact(parsedChanges, commitMessages);
     impactAnalysis = impactResults.impactAnalysis;
     this.mergeFileAnalyses(fileAnalyses, impactResults.fileAnalyses);
@@ -185,11 +182,9 @@ export class ChangeAnalyzer {
    * @param parsedChanges - Parsed file changes
    * @returns AI analysis result
    */
-  private async analyzeQuality(
-    parsedChanges: ParsedFileChange[]
-  ): Promise<AIAnalysisResult> {
+  private async analyzeQuality(parsedChanges: ParsedFileChange[]): Promise<AIAnalysisResult> {
     const batches = this.createSmartBatches(parsedChanges);
-    const results = await this.processBatchesInParallel(batches, 'quality');
+    const results = await this.processBatchesInParallel(batches, "quality");
 
     return this.combineResults(results);
   }
@@ -199,11 +194,9 @@ export class ChangeAnalyzer {
    * @param parsedChanges - Parsed file changes
    * @returns AI analysis result
    */
-  private async analyzeSecurity(
-    parsedChanges: ParsedFileChange[]
-  ): Promise<AIAnalysisResult> {
+  private async analyzeSecurity(parsedChanges: ParsedFileChange[]): Promise<AIAnalysisResult> {
     const batches = this.createSmartBatches(parsedChanges);
-    const results = await this.processBatchesInParallel(batches, 'security');
+    const results = await this.processBatchesInParallel(batches, "security");
 
     return this.combineResults(results);
   }
@@ -216,18 +209,17 @@ export class ChangeAnalyzer {
    */
   private async analyzeImpact(
     parsedChanges: ParsedFileChange[],
-    commits?:
-      | Array<{
-          sha: string;
-          message: string;
-          author: string;
-          email: string;
-          date: string;
-        }>
+    commits?: Array<{
+      sha: string;
+      message: string;
+      author: string;
+      email: string;
+      date: string;
+    }>
   ): Promise<AIAnalysisResult> {
     const batches = this.createSmartBatches(parsedChanges);
     const commitMessages = commits?.map((c) => c.message);
-    const results = await this.processBatchesInParallel(batches, 'impact', commitMessages);
+    const results = await this.processBatchesInParallel(batches, "impact", commitMessages);
 
     return this.combineResults(results);
   }
@@ -241,11 +233,11 @@ export class ChangeAnalyzer {
     const batches = this.createSmartBatches(parsedChanges);
 
     if (batches.length === 0) {
-      return 'No changes to analyze.';
+      return "No changes to analyze.";
     }
 
     if (!this.aiProvider) {
-      return 'AI provider not available for architecture analysis.';
+      return "AI provider not available for architecture analysis.";
     }
 
     const prompt = buildArchitectureReviewPrompt(batches[0]);
@@ -254,8 +246,8 @@ export class ChangeAnalyzer {
       const response = await this.aiProvider.analyzeCode(prompt);
       return response.summary || response.toString();
     } catch (error) {
-      console.error('Architecture analysis failed:', error);
-      return 'Architecture analysis unavailable.';
+      console.error("Architecture analysis failed:", error);
+      return "Architecture analysis unavailable.";
     }
   }
 
@@ -329,10 +321,10 @@ export class ChangeAnalyzer {
       const batchResults = await Promise.allSettled(promises);
 
       for (const result of batchResults) {
-        if (result.status === 'fulfilled') {
+        if (result.status === "fulfilled") {
           results.push(result.value);
         } else {
-          console.error('Batch analysis failed:', result.reason);
+          console.error("Batch analysis failed:", result.reason);
         }
       }
     }
@@ -389,13 +381,13 @@ export class ChangeAnalyzer {
     commitMessages?: string[]
   ): string {
     switch (analysisType) {
-      case 'quality':
+      case "quality":
         return buildQualityAnalysisPrompt(batch);
-      case 'security':
+      case "security":
         return buildSecurityAnalysisPrompt(batch);
-      case 'impact':
+      case "impact":
         return buildImpactAnalysisPrompt(batch, commitMessages);
-      case 'architecture':
+      case "architecture":
         return buildArchitectureReviewPrompt(batch);
       default:
         throw new Error(`Unknown analysis type: ${analysisType}`);
@@ -408,12 +400,9 @@ export class ChangeAnalyzer {
    * @param batch - Original batch (fallback)
    * @returns AI analysis result
    */
-  private parseAIResponse(
-    response: any,
-    batch: ParsedFileChange[]
-  ): AIAnalysisResult {
+  private parseAIResponse(response: any, batch: ParsedFileChange[]): AIAnalysisResult {
     try {
-      const parsed = typeof response === 'string' ? JSON.parse(response) : response;
+      const parsed = typeof response === "string" ? JSON.parse(response) : response;
 
       return {
         fileAnalyses: parsed.fileAnalyses || [],
@@ -423,7 +412,7 @@ export class ChangeAnalyzer {
         documentationNeeds: parsed.documentationNeeds,
       };
     } catch (error) {
-      console.error('Failed to parse AI response:', error);
+      console.error("Failed to parse AI response:", error);
 
       return {
         fileAnalyses: batch.map((change) => this.createDefaultFileAnalysis(change)),
@@ -444,7 +433,7 @@ export class ChangeAnalyzer {
     const allTestingRecommendations: string[] = [];
     const allDeploymentRisks: string[] = [];
 
-    let maxRiskLevel: ImpactAnalysis['riskLevel'] = 'low';
+    let maxRiskLevel: ImpactAnalysis["riskLevel"] = "low";
     let totalQualityScore = 0;
     let qualityScoreCount = 0;
 
@@ -487,7 +476,7 @@ export class ChangeAnalyzer {
    * @param riskLevel - Risk level
    * @returns Numeric value
    */
-  private getRiskValue(riskLevel: ImpactAnalysis['riskLevel']): number {
+  private getRiskValue(riskLevel: ImpactAnalysis["riskLevel"]): number {
     const values = { low: 1, medium: 2, high: 3, critical: 4 };
     return values[riskLevel] || 0;
   }
@@ -538,11 +527,11 @@ export class ChangeAnalyzer {
    * @returns File analysis change type
    */
   private mapChangeType(
-    changeType: 'added' | 'modified' | 'deleted' | 'renamed'
-  ): FileAnalysis['changeType'] {
-    if (changeType === 'added') return 'feature';
-    if (changeType === 'deleted') return 'refactor';
-    return 'unknown';
+    changeType: "added" | "modified" | "deleted" | "renamed"
+  ): FileAnalysis["changeType"] {
+    if (changeType === "added") return "feature";
+    if (changeType === "deleted") return "refactor";
+    return "unknown";
   }
 
   /**
@@ -551,7 +540,7 @@ export class ChangeAnalyzer {
    */
   private createDefaultImpactAnalysis(): ImpactAnalysis {
     return {
-      riskLevel: 'low',
+      riskLevel: "low",
       affectedModules: [],
       breakingChanges: [],
       testingRecommendations: [],
@@ -566,10 +555,7 @@ export class ChangeAnalyzer {
    * @param startTime - Start timestamp
    * @returns Empty analysis result
    */
-  private createEmptyResult(
-    changes: GitChanges,
-    startTime: number
-  ): ChangeAnalysisResult {
+  private createEmptyResult(changes: GitChanges, startTime: number): ChangeAnalysisResult {
     return {
       changeType: changes.type,
       summary: changes.summary,

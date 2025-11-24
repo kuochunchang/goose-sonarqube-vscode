@@ -3,9 +3,9 @@
  * Webview panel for displaying Git change analysis results
  */
 
-import type { CodeIssue, FileAnalysis, MergedAnalysisResult } from '../git-analyzer/index.js';
-import * as path from 'node:path';
-import * as vscode from 'vscode';
+import type { CodeIssue, FileAnalysis, MergedAnalysisResult } from "../git-analyzer/index.js";
+import * as path from "node:path";
+import * as vscode from "vscode";
 
 /**
  * Panel data passed to webview
@@ -14,7 +14,7 @@ export interface GitChangePanelData {
   /** Analysis result (optional, can be null for initial panel) */
   result?: MergedAnalysisResult;
   /** Change source type */
-  changeSource: 'working-directory' | 'branch-comparison' | 'pull-request' | 'none';
+  changeSource: "working-directory" | "branch-comparison" | "pull-request" | "none";
   /** Working directory path */
   workingDirectory: string;
   /** Source branch (for branch comparison) */
@@ -28,7 +28,7 @@ export interface GitChangePanelData {
   /** GitHub repository (for PR analysis) */
   repository?: { owner: string; repo: string };
   /** Current status of the analysis */
-  status?: 'idle' | 'analyzing' | 'completed' | 'error';
+  status?: "idle" | "analyzing" | "completed" | "error";
   /** Progress information */
   progress?: {
     message: string;
@@ -43,7 +43,7 @@ function calculateSummaryStats(result: MergedAnalysisResult): {
   totalIssues: number;
   totalFiles: number;
   qualityScore: number;
-  riskLevel: 'low' | 'medium' | 'high' | 'critical';
+  riskLevel: "low" | "medium" | "high" | "critical";
   bySeverity: {
     critical: number;
     high: number;
@@ -54,11 +54,11 @@ function calculateSummaryStats(result: MergedAnalysisResult): {
 } {
   const allIssues = result.fileAnalyses.flatMap((f: FileAnalysis) => f.issues);
   const bySeverity = {
-    critical: allIssues.filter((i: CodeIssue) => i.severity === 'critical').length,
-    high: allIssues.filter((i: CodeIssue) => i.severity === 'high').length,
-    medium: allIssues.filter((i: CodeIssue) => i.severity === 'medium').length,
-    low: allIssues.filter((i: CodeIssue) => i.severity === 'low').length,
-    info: allIssues.filter((i: CodeIssue) => i.severity === 'info').length,
+    critical: allIssues.filter((i: CodeIssue) => i.severity === "critical").length,
+    high: allIssues.filter((i: CodeIssue) => i.severity === "high").length,
+    medium: allIssues.filter((i: CodeIssue) => i.severity === "medium").length,
+    low: allIssues.filter((i: CodeIssue) => i.severity === "low").length,
+    info: allIssues.filter((i: CodeIssue) => i.severity === "info").length,
   };
 
   return {
@@ -74,7 +74,7 @@ function calculateSummaryStats(result: MergedAnalysisResult): {
  * Webview message types
  */
 interface WebviewMessage {
-  command: 'openFile' | 'exportReport' | 'copyToClipboard' | 'refresh';
+  command: "openFile" | "exportReport" | "copyToClipboard" | "refresh";
   file?: string;
   line?: number;
   format?: string;
@@ -85,7 +85,7 @@ interface WebviewMessage {
  */
 export class GitChangePanel {
   public static currentPanel: GitChangePanel | undefined;
-  public static readonly viewType = 'gooseCodeReview.gitChangePanel';
+  public static readonly viewType = "gooseCodeReview.gitChangePanel";
 
   private readonly _panel: vscode.WebviewPanel;
   private readonly _extensionUri: vscode.Uri;
@@ -110,7 +110,7 @@ export class GitChangePanel {
     // Create new panel
     const panel = vscode.window.createWebviewPanel(
       GitChangePanel.viewType,
-      'Git Change Analysis',
+      "Git Change Analysis",
       column || vscode.ViewColumn.One,
       {
         enableScripts: true,
@@ -140,7 +140,7 @@ export class GitChangePanel {
     // Handle messages from webview
     this._panel.webview.onDidReceiveMessage(
       (message) => {
-        this._handleMessage(message);
+        void this._handleMessage(message);
       },
       null,
       this._disposables
@@ -159,15 +159,15 @@ export class GitChangePanel {
    * Update progress
    */
   public updateProgress(message: string, percentage: number): void {
-    this._data.status = 'analyzing';
+    this._data.status = "analyzing";
     this._data.progress = { message, percentage };
 
     // If we are already in analyzing state, just send update message
     // Otherwise, we need to re-render to show the progress view
     this._panel.webview.postMessage({
-      command: 'updateProgress',
+      command: "updateProgress",
       message,
-      percentage
+      percentage,
     });
   }
 
@@ -192,7 +192,7 @@ export class GitChangePanel {
    */
   private _update(): void {
     const webview = this._panel.webview;
-    this._panel.title = 'Git Change Analysis';
+    this._panel.title = "Git Change Analysis";
     this._panel.webview.html = this._getHtmlForWebview(webview);
   }
 
@@ -201,24 +201,24 @@ export class GitChangePanel {
    */
   private async _handleMessage(message: WebviewMessage): Promise<void> {
     switch (message.command) {
-      case 'openFile':
+      case "openFile":
         if (message.file !== undefined && message.line !== undefined) {
           await this._openFile(message.file, message.line);
         }
         break;
-      case 'exportReport':
-        if (message.format === 'markdown' || message.format === 'json') {
+      case "exportReport":
+        if (message.format === "markdown" || message.format === "json") {
           await this._exportReport(message.format);
         }
         break;
-      case 'copyToClipboard':
-        if (message.format === 'markdown' || message.format === 'json') {
+      case "copyToClipboard":
+        if (message.format === "markdown" || message.format === "json") {
           await this._copyToClipboard(message.format);
         }
         break;
-      case 'refresh':
+      case "refresh":
         // Refresh analysis (re-run)
-        vscode.window.showInformationMessage('Refresh analysis not yet implemented');
+        vscode.window.showInformationMessage("Refresh analysis not yet implemented");
         break;
     }
   }
@@ -230,7 +230,7 @@ export class GitChangePanel {
     try {
       // Resolve file path - if relative, make it absolute using working directory
       let resolvedPath = filePath;
-      if (!filePath.startsWith('/') && !filePath.match(/^[a-zA-Z]:\\/)) {
+      if (!filePath.startsWith("/") && !filePath.match(/^[a-zA-Z]:\\/)) {
         // Relative path - prepend working directory
         resolvedPath = path.join(this._data.workingDirectory, filePath);
       }
@@ -257,9 +257,9 @@ export class GitChangePanel {
   /**
    * Export report to file
    */
-  private async _exportReport(format: 'markdown' | 'json'): Promise<void> {
+  private async _exportReport(format: "markdown" | "json"): Promise<void> {
     if (!this._data.result) {
-      vscode.window.showWarningMessage('No analysis result to export');
+      vscode.window.showWarningMessage("No analysis result to export");
       return;
     }
 
@@ -276,10 +276,10 @@ export class GitChangePanel {
       }
 
       // Import ReportExporter dynamically
-      const { ReportExporter } = await import('../git-analyzer/index.js');
+      const { ReportExporter } = await import("../git-analyzer/index.js");
       const exporter = new ReportExporter();
       const content = exporter.export(this._data.result, format);
-      await vscode.workspace.fs.writeFile(uri, Buffer.from(content, 'utf-8'));
+      await vscode.workspace.fs.writeFile(uri, Buffer.from(content, "utf-8"));
 
       vscode.window.showInformationMessage(`Report exported to ${uri.fsPath}`);
     } catch (error) {
@@ -291,15 +291,15 @@ export class GitChangePanel {
   /**
    * Copy report to clipboard
    */
-  private async _copyToClipboard(format: 'markdown' | 'json'): Promise<void> {
+  private async _copyToClipboard(format: "markdown" | "json"): Promise<void> {
     if (!this._data.result) {
-      vscode.window.showWarningMessage('No analysis result to copy');
+      vscode.window.showWarningMessage("No analysis result to copy");
       return;
     }
 
     try {
       // Import ReportExporter dynamically
-      const { ReportExporter } = await import('../git-analyzer/index.js');
+      const { ReportExporter } = await import("../git-analyzer/index.js");
       const exporter = new ReportExporter();
       const content = exporter.export(this._data.result, format);
 
@@ -316,9 +316,9 @@ export class GitChangePanel {
    */
   private _getHtmlForWebview(_webview: vscode.Webview): string {
     const result = this._data.result;
-    const status = this._data.status || 'idle';
+    const status = this._data.status || "idle";
 
-    if (status === 'analyzing') {
+    if (status === "analyzing") {
       return this._getAnalyzingStateHtml();
     }
 
@@ -354,7 +354,7 @@ export class GitChangePanel {
    * Get analyzing state HTML
    */
   private _getAnalyzingStateHtml(): string {
-    const progress = this._data.progress || { message: 'Initializing...', percentage: 0 };
+    const progress = this._data.progress || { message: "Initializing...", percentage: 0 };
 
     return `<!DOCTYPE html>
 <html lang="en">
@@ -437,15 +437,22 @@ export class GitChangePanel {
    * Get header HTML
    */
   private _getHeaderHtml(_result: MergedAnalysisResult): string {
-    const { changeSource, sourceBranch, targetBranch, pullRequestNumber, pullRequestTitle, repository } = this._data;
-    let subtitle = '';
+    const {
+      changeSource,
+      sourceBranch,
+      targetBranch,
+      pullRequestNumber,
+      pullRequestTitle,
+      repository,
+    } = this._data;
+    let subtitle = "";
 
-    if (changeSource === 'working-directory') {
-      subtitle = 'Working Directory Changes';
-    } else if (changeSource === 'branch-comparison') {
+    if (changeSource === "working-directory") {
+      subtitle = "Working Directory Changes";
+    } else if (changeSource === "branch-comparison") {
       subtitle = `${sourceBranch} → ${targetBranch}`;
-    } else if (changeSource === 'pull-request' && pullRequestNumber && repository) {
-      subtitle = `PR #${pullRequestNumber}: ${pullRequestTitle || 'Untitled'} (${repository.owner}/${repository.repo})`;
+    } else if (changeSource === "pull-request" && pullRequestNumber && repository) {
+      subtitle = `PR #${pullRequestNumber}: ${pullRequestTitle || "Untitled"} (${repository.owner}/${repository.repo})`;
     }
 
     return `
@@ -490,11 +497,11 @@ export class GitChangePanel {
     <div class="severity-breakdown">
       <h3>Issues by Severity</h3>
       <div class="severity-bars">
-        ${this._getSeverityBar('Critical', summary.bySeverity.critical || 0, 'critical')}
-        ${this._getSeverityBar('High', summary.bySeverity.high || 0, 'high')}
-        ${this._getSeverityBar('Medium', summary.bySeverity.medium || 0, 'medium')}
-        ${this._getSeverityBar('Low', summary.bySeverity.low || 0, 'low')}
-        ${this._getSeverityBar('Info', summary.bySeverity.info || 0, 'info')}
+        ${this._getSeverityBar("Critical", summary.bySeverity.critical || 0, "critical")}
+        ${this._getSeverityBar("High", summary.bySeverity.high || 0, "high")}
+        ${this._getSeverityBar("Medium", summary.bySeverity.medium || 0, "medium")}
+        ${this._getSeverityBar("Low", summary.bySeverity.low || 0, "low")}
+        ${this._getSeverityBar("Info", summary.bySeverity.info || 0, "info")}
       </div>
     </div>`;
   }
@@ -569,17 +576,17 @@ export class GitChangePanel {
               <span class="source-badge">${issue.source}</span>
             </div>
             <div class="issue-message">${this._escapeHtml(issue.message)}</div>
-            ${issue.description ? `<div class="issue-description">${this._escapeHtml(issue.description)}</div>` : ''}
+            ${issue.description ? `<div class="issue-description">${this._escapeHtml(issue.description)}</div>` : ""}
             <div class="issue-footer">
               <span class="issue-location" onclick="openFile('${this._escapeHtml(issue.file)}', ${issue.line})">
                 📄 ${this._escapeHtml(issue.file)}:${issue.line}
               </span>
-              ${issue.effort ? `<span class="issue-effort">⏱️ ${issue.effort}min</span>` : ''}
+              ${issue.effort ? `<span class="issue-effort">⏱️ ${issue.effort}min</span>` : ""}
             </div>
-            ${issue.suggestion ? `<div class="issue-suggestion">💡 ${this._escapeHtml(issue.suggestion)}</div>` : ''}
+            ${issue.suggestion ? `<div class="issue-suggestion">💡 ${this._escapeHtml(issue.suggestion)}</div>` : ""}
           </div>`;
           })
-          .join('');
+          .join("");
 
         return `
         <div class="file-section">
@@ -592,7 +599,7 @@ export class GitChangePanel {
           </div>
         </div>`;
       })
-      .join('');
+      .join("");
 
     return `
     <div class="issues-section">
@@ -1030,13 +1037,12 @@ export class GitChangePanel {
    */
   private _escapeHtml(text: string): string {
     const map: Record<string, string> = {
-      '&': '&amp;',
-      '<': '&lt;',
-      '>': '&gt;',
-      '"': '&quot;',
-      "'": '&#039;',
+      "&": "&amp;",
+      "<": "&lt;",
+      ">": "&gt;",
+      '"': "&quot;",
+      "'": "&#039;",
     };
     return text.replace(/[&<>"']/g, (m) => map[m]);
   }
 }
-

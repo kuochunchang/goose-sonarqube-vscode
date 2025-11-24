@@ -5,10 +5,10 @@
  * of unchanged code. Cache keys are based on diff hashes.
  */
 
-import { createHash } from 'crypto';
-import { mkdir, readFile, writeFile, stat, rm } from 'fs/promises';
-import { existsSync } from 'fs';
-import { resolve, join } from 'path';
+import { createHash } from "crypto";
+import { mkdir, readFile, writeFile, stat, rm } from "fs/promises";
+import { existsSync } from "fs";
+import { resolve, join } from "path";
 
 /**
  * Cache entry metadata
@@ -86,7 +86,11 @@ export class AnalysisCacheService {
    * @param ttl Time-to-live in seconds (default: 24 hours)
    * @param enabled Whether caching is enabled
    */
-  constructor(cacheDir: string = '.goose-review-cache', ttl: number = 86400, enabled: boolean = true) {
+  constructor(
+    cacheDir: string = ".goose-review-cache",
+    ttl: number = 86400,
+    enabled: boolean = true
+  ) {
     this.cacheDir = resolve(process.cwd(), cacheDir);
     this.ttl = ttl;
     this.enabled = enabled;
@@ -112,9 +116,9 @@ export class AnalysisCacheService {
    * @returns Cache key (hash)
    */
   generateKey(diff: string, analysisType: string): string {
-    const hash = createHash('sha256');
+    const hash = createHash("sha256");
     hash.update(`${analysisType}:${diff}`);
-    return hash.digest('hex');
+    return hash.digest("hex");
   }
 
   /**
@@ -135,7 +139,7 @@ export class AnalysisCacheService {
         return null;
       }
 
-      const content = await readFile(filePath, 'utf-8');
+      const content = await readFile(filePath, "utf-8");
       const entry: CacheEntry<T> = JSON.parse(content);
 
       // Check if expired
@@ -149,7 +153,7 @@ export class AnalysisCacheService {
 
       this.hits++;
       return entry.data;
-    } catch (error) {
+    } catch {
       // On any error, treat as cache miss
       this.misses++;
       return null;
@@ -179,10 +183,12 @@ export class AnalysisCacheService {
       };
 
       const filePath = this.getCacheFilePath(key);
-      await writeFile(filePath, JSON.stringify(entry, null, 2), 'utf-8');
+      await writeFile(filePath, JSON.stringify(entry, null, 2), "utf-8");
     } catch (error) {
       // Silently fail on cache write errors
-      console.warn(`Failed to write cache: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      console.warn(
+        `Failed to write cache: ${error instanceof Error ? error.message : "Unknown error"}`
+      );
     }
   }
 
@@ -258,7 +264,7 @@ export class AnalysisCacheService {
 
     try {
       if (existsSync(this.cacheDir)) {
-        const { readdir } = await import('fs/promises');
+        const { readdir } = await import("fs/promises");
         const files = await readdir(this.cacheDir);
 
         entries = files.length;
@@ -298,14 +304,14 @@ export class AnalysisCacheService {
         return 0;
       }
 
-      const { readdir } = await import('fs/promises');
+      const { readdir } = await import("fs/promises");
       const files = await readdir(this.cacheDir);
 
       for (const file of files) {
         const filePath = join(this.cacheDir, file);
 
         try {
-          const content = await readFile(filePath, 'utf-8');
+          const content = await readFile(filePath, "utf-8");
           const entry: CacheEntry<unknown> = JSON.parse(content);
 
           const age = (Date.now() - entry.timestamp) / 1000;

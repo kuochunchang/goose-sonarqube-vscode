@@ -5,17 +5,17 @@
  * Handles scanning, result retrieval, and summary generation for entire projects.
  */
 
-import { writeFileSync } from 'fs';
-import { tmpdir } from 'os';
-import { join } from 'path';
+import { writeFileSync } from "fs";
+import { tmpdir } from "os";
+import { join } from "path";
 import type {
   ProjectAnalysisOptions,
   ProjectAnalysisResult,
   QualityGateStatus,
   SonarQubeConfig,
   SonarQubeSeverity,
-} from '../types/sonarqube.types.js';
-import { SonarQubeService } from './SonarQubeService.js';
+} from "../types/sonarqube.types.js";
+import { SonarQubeService } from "./SonarQubeService.js";
 
 /**
  * Service for analyzing complete projects with SonarQube
@@ -35,7 +35,7 @@ export class ProjectAnalysisService {
    * @returns Complete project analysis result
    */
   async analyzeProject(options: ProjectAnalysisOptions): Promise<ProjectAnalysisResult> {
-    console.log('[ProjectAnalysisService] Starting project analysis for:', this.config.projectKey);
+    console.log("[ProjectAnalysisService] Starting project analysis for:", this.config.projectKey);
 
     const analysisDate = new Date().toISOString();
 
@@ -45,7 +45,7 @@ export class ProjectAnalysisService {
       throw new Error(`SonarQube connection failed: ${connectionTest.error}`);
     }
 
-    console.log('[ProjectAnalysisService] Connection successful. Starting scan...');
+    console.log("[ProjectAnalysisService] Connection successful. Starting scan...");
 
     // Execute scanner
     const scanResult = await this.sonarQubeService.executeScan({
@@ -58,20 +58,20 @@ export class ProjectAnalysisService {
       throw new Error(`Scanner execution failed: ${scanResult.error}`);
     }
 
-    console.log('[ProjectAnalysisService] Scan completed successfully.');
+    console.log("[ProjectAnalysisService] Scan completed successfully.");
 
     // Wait for analysis to complete if taskId is available and waitForCompletion is true
     if (scanResult.taskId && (options.waitForCompletion ?? true)) {
-      console.log('[ProjectAnalysisService] Waiting for server-side analysis...');
+      console.log("[ProjectAnalysisService] Waiting for server-side analysis...");
       const analysisCompleted = await this.sonarQubeService.waitForAnalysis(
         scanResult.taskId,
         options.timeout ?? 300000
       );
 
       if (!analysisCompleted) {
-        throw new Error('Analysis did not complete within the specified timeout');
+        throw new Error("Analysis did not complete within the specified timeout");
       }
-      console.log('[ProjectAnalysisService] Server-side analysis completed.');
+      console.log("[ProjectAnalysisService] Server-side analysis completed.");
     }
 
     // Retrieve analysis results from server
@@ -79,12 +79,12 @@ export class ProjectAnalysisService {
     let qualityStatus: QualityGateStatus | undefined;
 
     try {
-      console.log('[ProjectAnalysisService] Retrieving analysis results...');
+      console.log("[ProjectAnalysisService] Retrieving analysis results...");
       analysisResult = await this.sonarQubeService.getAnalysisResult(this.config.projectKey);
       qualityStatus = analysisResult.qualityGate.status;
-      console.log('[ProjectAnalysisService] Quality Gate Status:', qualityStatus);
+      console.log("[ProjectAnalysisService] Quality Gate Status:", qualityStatus);
     } catch (error) {
-      console.warn('[ProjectAnalysisService] Failed to retrieve analysis results:', error);
+      console.warn("[ProjectAnalysisService] Failed to retrieve analysis results:", error);
       // Continue without analysis results if retrieval fails
     }
 
@@ -101,8 +101,8 @@ export class ProjectAnalysisService {
       summary,
     };
 
-    console.log('[ProjectAnalysisService] Analysis complete.');
-    console.log('[ProjectAnalysisService] Summary:', summary);
+    console.log("[ProjectAnalysisService] Analysis complete.");
+    console.log("[ProjectAnalysisService] Summary:", summary);
 
     return result;
   }
@@ -121,7 +121,7 @@ export class ProjectAnalysisService {
       securityHotspots: number;
     };
     issues: unknown[];
-  }): ProjectAnalysisResult['summary'] {
+  }): ProjectAnalysisResult["summary"] {
     if (!analysisResult) {
       return {
         totalIssues: 0,
@@ -168,16 +168,16 @@ export class ProjectAnalysisService {
    */
   exportResultToTempFile(result: ProjectAnalysisResult): string {
     const tempDir = tmpdir();
-    const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+    const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
     const fileName = `sonarqube-analysis-${result.projectKey}-${timestamp}.json`;
     const filePath = join(tempDir, fileName);
 
-    console.log('[ProjectAnalysisService] Exporting analysis result to:', filePath);
+    console.log("[ProjectAnalysisService] Exporting analysis result to:", filePath);
 
     const jsonContent = JSON.stringify(result, null, 2);
-    writeFileSync(filePath, jsonContent, 'utf-8');
+    writeFileSync(filePath, jsonContent, "utf-8");
 
-    console.log('[ProjectAnalysisService] Export completed successfully');
+    console.log("[ProjectAnalysisService] Export completed successfully");
 
     return filePath;
   }

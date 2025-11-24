@@ -2,8 +2,8 @@
  * Analysis-related type definitions
  */
 
-import type { GitChanges } from './git.types.js';
-import type { SonarQubeAnalysisResult } from './sonarqube.types.js';
+import type { GitChanges } from "./git.types.js";
+import type { SonarQubeAnalysisResult } from "./sonarqube.types.js";
 
 /**
  * Analysis options
@@ -26,25 +26,25 @@ export interface AnalysisOptions {
 /**
  * Issue severity levels
  */
-export type IssueSeverity = 'critical' | 'high' | 'medium' | 'low' | 'info';
+export type IssueSeverity = "critical" | "high" | "medium" | "low" | "info";
 
 /**
  * Issue types
  */
 export type IssueType =
-  | 'bug'
-  | 'vulnerability'
-  | 'code-smell'
-  | 'security-hotspot'
-  | 'breaking-change'
-  | 'performance'
-  | 'architecture'
-  | 'testing';
+  | "bug"
+  | "vulnerability"
+  | "code-smell"
+  | "security-hotspot"
+  | "breaking-change"
+  | "performance"
+  | "architecture"
+  | "testing";
 
 /**
  * Source of the issue
  */
-export type IssueSource = 'sonarqube' | 'ai' | 'merged';
+export type IssueSource = "sonarqube" | "ai" | "merged";
 
 /**
  * Individual code issue
@@ -79,7 +79,7 @@ export interface FileAnalysis {
   /** File path */
   file: string;
   /** Change type classification */
-  changeType: 'feature' | 'bugfix' | 'refactor' | 'test' | 'docs' | 'config' | 'unknown';
+  changeType: "feature" | "bugfix" | "refactor" | "test" | "docs" | "config" | "unknown";
   /** Issues found in this file */
   issues: CodeIssue[];
   /** Summary text */
@@ -95,7 +95,7 @@ export interface FileAnalysis {
  */
 export interface ImpactAnalysis {
   /** Overall risk level */
-  riskLevel: 'low' | 'medium' | 'high' | 'critical';
+  riskLevel: "low" | "medium" | "high" | "critical";
   /** Affected modules/components */
   affectedModules: string[];
   /** Breaking changes detected */
@@ -113,9 +113,9 @@ export interface ImpactAnalysis {
  */
 export interface ChangeAnalysisResult {
   /** Type of change analyzed */
-  changeType: GitChanges['type'];
+  changeType: GitChanges["type"];
   /** Change summary */
-  summary: GitChanges['summary'];
+  summary: GitChanges["summary"];
   /** Per-file analysis results */
   fileAnalyses: FileAnalysis[];
   /** Overall impact analysis */
@@ -135,9 +135,9 @@ export interface SonarIssue {
   /** Rule key (e.g., "squid:S1135") */
   rule: string;
   /** Severity */
-  severity: 'BLOCKER' | 'CRITICAL' | 'MAJOR' | 'MINOR' | 'INFO';
+  severity: "BLOCKER" | "CRITICAL" | "MAJOR" | "MINOR" | "INFO";
   /** Issue type */
-  type: 'BUG' | 'VULNERABILITY' | 'CODE_SMELL' | 'SECURITY_HOTSPOT';
+  type: "BUG" | "VULNERABILITY" | "CODE_SMELL" | "SECURITY_HOTSPOT";
   /** Component (file path) */
   component: string;
   /** Line number */

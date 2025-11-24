@@ -3,8 +3,8 @@
  * Compares two branches and analyzes the differences
  */
 
-import * as vscode from 'vscode';
-import { GitAnalysisService } from '../services/git-analysis-service.js';
+import * as vscode from "vscode";
+import { GitAnalysisService } from "../services/git-analysis-service.js";
 import {
   executeAnalysisWithProgress,
   getWorkspaceFolder,
@@ -13,7 +13,7 @@ import {
   showAnalyzingPanel,
   showCompletionMessage,
   updatePanelWithResults,
-} from '../utils/git-analysis-helpers.js';
+} from "../utils/git-analysis-helpers.js";
 
 /**
  * Execute analyze branch comparison command
@@ -40,7 +40,7 @@ export async function analyzeBranchComparison(
     const targetBranch = await vscode.window.showQuickPick(
       branches.filter((b) => b !== currentBranch),
       {
-        title: 'Select Target Branch',
+        title: "Select Target Branch",
         placeHolder: `Compare current branch (${currentBranch}) with...`,
       }
     );
@@ -49,7 +49,9 @@ export async function analyzeBranchComparison(
       return; // User cancelled
     }
 
-    console.log(`[Analyze Branch] User selected: currentBranch=${currentBranch}, targetBranch=${targetBranch}`);
+    console.log(
+      `[Analyze Branch] User selected: currentBranch=${currentBranch}, targetBranch=${targetBranch}`
+    );
 
     // Ask user to select analysis types
     const analysisTypes = await selectAnalysisTypes(context);
@@ -59,7 +61,7 @@ export async function analyzeBranchComparison(
 
     // Show panel immediately with analyzing state
     showAnalyzingPanel(context.extensionUri, {
-      changeSource: 'branch-comparison',
+      changeSource: "branch-comparison",
       workingDirectory,
       sourceBranch: currentBranch,
       targetBranch,
@@ -83,7 +85,7 @@ export async function analyzeBranchComparison(
 
     // Update panel with results
     updatePanelWithResults(context.extensionUri, result, {
-      changeSource: 'branch-comparison',
+      changeSource: "branch-comparison",
       workingDirectory,
       sourceBranch: currentBranch,
       targetBranch,
@@ -94,18 +96,13 @@ export async function analyzeBranchComparison(
   } catch (error) {
     const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
     if (workspaceFolder) {
-      handleAnalysisError(
-        error,
-        'Failed to analyze branch comparison',
-        {
-          changeSource: 'branch-comparison',
-          workingDirectory: workspaceFolder.uri.fsPath,
-        }
-      );
+      handleAnalysisError(error, "Failed to analyze branch comparison", {
+        changeSource: "branch-comparison",
+        workingDirectory: workspaceFolder.uri.fsPath,
+      });
     } else {
       const errorMessage = error instanceof Error ? error.message : String(error);
       vscode.window.showErrorMessage(`Failed to analyze branch comparison: ${errorMessage}`);
     }
   }
 }
-

@@ -5,9 +5,9 @@
  * graceful degradation, and hybrid analysis (SonarQube + AI).
  */
 
-import type { SonarQubeService } from './SonarQubeService.js';
-import type { SonarQubeMode } from '../types/sonarqube.types.js';
-import { ConfigLoader } from '../utils/ConfigLoader.js';
+import type { SonarQubeService } from "./SonarQubeService.js";
+import type { SonarQubeMode } from "../types/sonarqube.types.js";
+import { ConfigLoader } from "../utils/ConfigLoader.js";
 
 /**
  * Analysis mode after detection
@@ -16,17 +16,17 @@ export enum AnalysisMode {
   /**
    * Hybrid mode: SonarQube + AI analysis
    */
-  HYBRID = 'HYBRID',
+  HYBRID = "HYBRID",
 
   /**
    * AI-only mode: No SonarQube available
    */
-  AI_ONLY = 'AI_ONLY',
+  AI_ONLY = "AI_ONLY",
 
   /**
    * SonarQube-only mode: No AI provider configured
    */
-  SONARQUBE_ONLY = 'SONARQUBE_ONLY',
+  SONARQUBE_ONLY = "SONARQUBE_ONLY",
 }
 
 /**
@@ -94,7 +94,7 @@ export class AnalysisOrchestrator {
 
     // Test SonarQube availability
     if (this.sonarQubeService) {
-      messages.push('Testing SonarQube server connection...');
+      messages.push("Testing SonarQube server connection...");
 
       const connectionTest = await this.sonarQubeService.testConnection();
 
@@ -103,14 +103,14 @@ export class AnalysisOrchestrator {
         sonarQubeMode = this.sonarQubeService.getMode();
         sonarQubeVersion = connectionTest.version;
         messages.push(
-          `✓ SonarQube server connected (v${sonarQubeVersion}, ${connectionTest.responseTime}ms)`,
+          `✓ SonarQube server connected (v${sonarQubeVersion}, ${connectionTest.responseTime}ms)`
         );
       } else {
         messages.push(`✗ SonarQube server unavailable: ${connectionTest.error}`);
-        messages.push('  Falling back to AI-only analysis');
+        messages.push("  Falling back to AI-only analysis");
       }
     } else {
-      messages.push('SonarQube service not configured');
+      messages.push("SonarQube service not configured");
     }
 
     // Determine analysis mode
@@ -118,16 +118,16 @@ export class AnalysisOrchestrator {
 
     if (sonarQubeAvailable && this.aiProviderAvailable) {
       mode = AnalysisMode.HYBRID;
-      messages.push('✓ Analysis mode: HYBRID (SonarQube + AI)');
+      messages.push("✓ Analysis mode: HYBRID (SonarQube + AI)");
     } else if (sonarQubeAvailable) {
       mode = AnalysisMode.SONARQUBE_ONLY;
-      messages.push('✓ Analysis mode: SONARQUBE_ONLY (no AI provider configured)');
+      messages.push("✓ Analysis mode: SONARQUBE_ONLY (no AI provider configured)");
     } else if (this.aiProviderAvailable) {
       mode = AnalysisMode.AI_ONLY;
-      messages.push('✓ Analysis mode: AI_ONLY (SonarQube unavailable)');
+      messages.push("✓ Analysis mode: AI_ONLY (SonarQube unavailable)");
     } else {
       throw new Error(
-        'No analysis provider available. Configure either SonarQube server or AI provider.',
+        "No analysis provider available. Configure either SonarQube server or AI provider."
       );
     }
 
@@ -183,7 +183,7 @@ export class AnalysisOrchestrator {
    */
   static async createWithConfig(
     configPath?: string,
-    aiProviderAvailable: boolean = false,
+    aiProviderAvailable: boolean = false
   ): Promise<AnalysisOrchestrator> {
     let sonarQubeService: SonarQubeService | undefined;
 
@@ -192,7 +192,7 @@ export class AnalysisOrchestrator {
 
     if (sonarQubeConfig) {
       // Dynamically import SonarQubeService to avoid circular dependency
-      const { SonarQubeService: SQService } = await import('./SonarQubeService.js');
+      const { SonarQubeService: SQService } = await import("./SonarQubeService.js");
       sonarQubeService = new SQService(sonarQubeConfig);
     }
 
@@ -205,24 +205,26 @@ export class AnalysisOrchestrator {
    */
   getSummary(): string {
     if (!this.detectionResult) {
-      return 'Analysis mode not detected yet. Call detectMode() first.';
+      return "Analysis mode not detected yet. Call detectMode() first.";
     }
 
     const lines: string[] = [
-      '─────────────────────────────────────────',
-      '  Analysis Configuration Summary',
-      '─────────────────────────────────────────',
+      "─────────────────────────────────────────",
+      "  Analysis Configuration Summary",
+      "─────────────────────────────────────────",
       `  Mode: ${this.detectionResult.mode}`,
-      `  SonarQube: ${this.detectionResult.sonarQubeAvailable ? '✓ Available' : '✗ Unavailable'}`,
+      `  SonarQube: ${this.detectionResult.sonarQubeAvailable ? "✓ Available" : "✗ Unavailable"}`,
     ];
 
     if (this.detectionResult.sonarQubeVersion) {
       lines.push(`  SonarQube Version: ${this.detectionResult.sonarQubeVersion}`);
     }
 
-    lines.push(`  AI Provider: ${this.detectionResult.aiProviderAvailable ? '✓ Available' : '✗ Unavailable'}`);
-    lines.push('─────────────────────────────────────────');
+    lines.push(
+      `  AI Provider: ${this.detectionResult.aiProviderAvailable ? "✓ Available" : "✗ Unavailable"}`
+    );
+    lines.push("─────────────────────────────────────────");
 
-    return lines.join('\n');
+    return lines.join("\n");
   }
 }

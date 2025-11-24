@@ -2,7 +2,7 @@
  * GitService - Git operations wrapper using simple-git
  */
 
-import simpleGit, { LogResult, SimpleGit, StatusResult } from 'simple-git';
+import simpleGit, { LogResult, SimpleGit, StatusResult } from "simple-git";
 import type {
   BranchComparisonChanges,
   DiffHunk,
@@ -12,7 +12,7 @@ import type {
   GitFileChange,
   GitFileStatus,
   WorkingDirectoryChanges,
-} from '../types/index.js';
+} from "../types/index.js";
 
 export class GitService {
   private git: SimpleGit;
@@ -25,7 +25,7 @@ export class GitService {
    * Get the root directory of the git repository
    */
   async getGitRoot(): Promise<string> {
-    const root = await this.git.revparse(['--show-toplevel']);
+    const root = await this.git.revparse(["--show-toplevel"]);
     return root.trim();
   }
 
@@ -40,16 +40,16 @@ export class GitService {
     const unstagedDiff = await this.git.diff();
 
     // Get diff (staged changes)
-    const stagedDiff = await this.git.diff(['--cached']);
+    const stagedDiff = await this.git.diff(["--cached"]);
 
     // Combine diffs
-    const fullDiff = [stagedDiff, unstagedDiff].filter(Boolean).join('\n\n');
+    const fullDiff = [stagedDiff, unstagedDiff].filter(Boolean).join("\n\n");
 
     // Get diff summary
     const diffSummary = await this.git.diffSummary();
 
     // Parse files
-    const files: GitFileChange[] = status.files.map(file => ({
+    const files: GitFileChange[] = status.files.map((file) => ({
       path: file.path,
       status: this.mapFileStatus(file.index || file.working_dir),
       linesAdded: 0, // Will be calculated from diffSummary
@@ -57,9 +57,9 @@ export class GitService {
     }));
 
     // Enhance file info with diff statistics
-    diffSummary.files.forEach(diffFile => {
-      const fileChange = files.find(f => f.path === diffFile.file);
-      if (fileChange && 'insertions' in diffFile && 'deletions' in diffFile) {
+    diffSummary.files.forEach((diffFile) => {
+      const fileChange = files.find((f) => f.path === diffFile.file);
+      if (fileChange && "insertions" in diffFile && "deletions" in diffFile) {
         fileChange.linesAdded = diffFile.insertions;
         fileChange.linesDeleted = diffFile.deletions;
       }
@@ -72,7 +72,7 @@ export class GitService {
     };
 
     return {
-      type: 'working-directory',
+      type: "working-directory",
       files,
       diff: fullDiff,
       summary,
@@ -108,15 +108,15 @@ export class GitService {
     });
 
     // Parse files
-    const files: GitFileChange[] = diffSummary.files.map(file => ({
+    const files: GitFileChange[] = diffSummary.files.map((file) => ({
       path: file.file,
-      status: this.inferFileStatus('binary' in file ? file.binary : false),
-      linesAdded: 'insertions' in file ? file.insertions : 0,
-      linesDeleted: 'deletions' in file ? file.deletions : 0,
+      status: this.inferFileStatus("binary" in file ? file.binary : false),
+      linesAdded: "insertions" in file ? file.insertions : 0,
+      linesDeleted: "deletions" in file ? file.deletions : 0,
     }));
 
     // Parse commits
-    const commits: GitCommit[] = log.all.map(commit => ({
+    const commits: GitCommit[] = log.all.map((commit) => ({
       sha: commit.hash,
       message: commit.message,
       author: commit.author_name,
@@ -131,7 +131,7 @@ export class GitService {
     };
 
     return {
-      type: 'branch-comparison',
+      type: "branch-comparison",
       baseBranch,
       compareBranch,
       files,
@@ -144,12 +144,12 @@ export class GitService {
   /**
    * Parse diff text into structured FileDiff objects
    */
-  async parseDiff(diff: string): Promise<FileDiff[]> {
+  parseDiff(diff: string): FileDiff[] {
     if (!diff || diff.trim().length === 0) {
       return [];
     }
 
-    const lines = diff.split('\n');
+    const lines = diff.split("\n");
     const fileDiffs: FileDiff[] = [];
     let currentFile: FileDiff | null = null;
     let currentHunk: DiffHunk | null = null;
@@ -158,7 +158,7 @@ export class GitService {
       const line = lines[i];
 
       // Start of new file diff
-      if (line.startsWith('diff --git')) {
+      if (line.startsWith("diff --git")) {
         // Save previous file if exists
         if (currentFile && currentHunk) {
           currentFile.hunks.push(currentHunk);
@@ -177,9 +177,9 @@ export class GitService {
           currentFile = {
             path: newPath,
             oldPath: oldPath !== newPath ? oldPath : undefined,
-            status: oldPath !== newPath ? 'renamed' : 'modified',
-            oldContent: '',
-            newContent: '',
+            status: oldPath !== newPath ? "renamed" : "modified",
+            oldContent: "",
+            newContent: "",
             hunks: [],
             isBinary: false,
           };
@@ -187,22 +187,22 @@ export class GitService {
       }
 
       // Binary file detection
-      if (line.includes('Binary files') && currentFile) {
+      if (line.includes("Binary files") && currentFile) {
         currentFile.isBinary = true;
       }
 
       // New file
-      if (line.startsWith('new file mode') && currentFile) {
-        currentFile.status = 'added';
+      if (line.startsWith("new file mode") && currentFile) {
+        currentFile.status = "added";
       }
 
       // Deleted file
-      if (line.startsWith('deleted file mode') && currentFile) {
-        currentFile.status = 'deleted';
+      if (line.startsWith("deleted file mode") && currentFile) {
+        currentFile.status = "deleted";
       }
 
       // Hunk header: @@ -oldStart,oldLines +newStart,newLines @@ context
-      if (line.startsWith('@@') && currentFile) {
+      if (line.startsWith("@@") && currentFile) {
         // Save previous hunk
         if (currentHunk) {
           currentFile.hunks.push(currentHunk);
@@ -212,17 +212,17 @@ export class GitService {
         if (hunkMatch) {
           currentHunk = {
             oldStart: parseInt(hunkMatch[1], 10),
-            oldLines: parseInt(hunkMatch[2] || '1', 10),
+            oldLines: parseInt(hunkMatch[2] || "1", 10),
             newStart: parseInt(hunkMatch[3], 10),
-            newLines: parseInt(hunkMatch[4] || '1', 10),
-            header: hunkMatch[5]?.trim() || '',
+            newLines: parseInt(hunkMatch[4] || "1", 10),
+            header: hunkMatch[5]?.trim() || "",
             lines: [],
           };
         }
       }
 
       // Hunk content lines (must start with +, -, or space)
-      if (currentHunk && (line.startsWith('+') || line.startsWith('-') || line.startsWith(' '))) {
+      if (currentHunk && (line.startsWith("+") || line.startsWith("-") || line.startsWith(" "))) {
         currentHunk.lines.push(line);
       }
     }
@@ -244,9 +244,9 @@ export class GitService {
   async getFileAtCommit(filePath: string, commit: string): Promise<string> {
     try {
       return await this.git.show([`${commit}:${filePath}`]);
-    } catch (error) {
+    } catch {
       // File might not exist at this commit
-      return '';
+      return "";
     }
   }
 
@@ -254,7 +254,7 @@ export class GitService {
    * Get current branch name
    */
   async getCurrentBranch(): Promise<string> {
-    const branch = await this.git.revparse(['--abbrev-ref', 'HEAD']);
+    const branch = await this.git.revparse(["--abbrev-ref", "HEAD"]);
     return branch.trim();
   }
 
@@ -270,27 +270,32 @@ export class GitService {
    * Get repository root path
    */
   async getRepoRoot(): Promise<string> {
-    const root = await this.git.revparse(['--show-toplevel']);
+    const root = await this.git.revparse(["--show-toplevel"]);
     return root.trim();
   }
 
   /**
    * Get list of all branches
    */
-  async getBranches(): Promise<{ all: string[]; current: string; local: string[]; remote: string[] }> {
-    const branchSummary = await this.git.branch(['-a']);
+  async getBranches(): Promise<{
+    all: string[];
+    current: string;
+    local: string[];
+    remote: string[];
+  }> {
+    const branchSummary = await this.git.branch(["-a"]);
     const currentBranch = await this.getCurrentBranch();
 
     return {
       all: branchSummary.all,
       current: currentBranch,
       local: branchSummary.branches
-        ? Object.keys(branchSummary.branches).filter(b => !b.startsWith('remotes/'))
+        ? Object.keys(branchSummary.branches).filter((b) => !b.startsWith("remotes/"))
         : [],
       remote: branchSummary.branches
         ? Object.keys(branchSummary.branches)
-          .filter(b => b.startsWith('remotes/'))
-          .map(b => b.replace(/^remotes\//, ''))
+            .filter((b) => b.startsWith("remotes/"))
+            .map((b) => b.replace(/^remotes\//, ""))
         : [],
     };
   }
@@ -300,19 +305,19 @@ export class GitService {
    */
   private mapFileStatus(status: string): GitFileStatus {
     switch (status) {
-      case 'A':
-      case '?':
-        return 'added';
-      case 'M':
-        return 'modified';
-      case 'D':
-        return 'deleted';
-      case 'R':
-        return 'renamed';
-      case 'C':
-        return 'copied';
+      case "A":
+      case "?":
+        return "added";
+      case "M":
+        return "modified";
+      case "D":
+        return "deleted";
+      case "R":
+        return "renamed";
+      case "C":
+        return "copied";
       default:
-        return 'modified';
+        return "modified";
     }
   }
 
@@ -321,6 +326,6 @@ export class GitService {
    */
   private inferFileStatus(_isBinary: boolean): GitFileStatus {
     // Simple inference - could be enhanced
-    return 'modified';
+    return "modified";
   }
 }

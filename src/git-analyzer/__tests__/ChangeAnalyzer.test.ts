@@ -2,14 +2,14 @@
  * Tests for ChangeAnalyzer service
  */
 
-import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { ChangeAnalyzer, type IAIProvider } from '../services/ChangeAnalyzer.js';
-import { GitService } from '../services/GitService.js';
-import type { AnalysisOptions, AIAnalysisResult } from '../types/analysis.types.js';
-import type { WorkingDirectoryChanges, BranchComparison } from '../types/git.types.js';
+import { describe, it, expect, beforeEach, vi } from "vitest";
+import { ChangeAnalyzer, type IAIProvider } from "../services/ChangeAnalyzer.js";
+import { GitService } from "../services/GitService.js";
+import type { AnalysisOptions, AIAnalysisResult } from "../types/analysis.types.js";
+import type { WorkingDirectoryChanges, BranchComparison } from "../types/git.types.js";
 
 // Mock GitService
-vi.mock('../services/GitService.js', () => ({
+vi.mock("../services/GitService.js", () => ({
   GitService: vi.fn(),
 }));
 
@@ -20,7 +20,7 @@ const createMockAIProvider = (): IAIProvider => {
   };
 };
 
-describe('ChangeAnalyzer', () => {
+describe("ChangeAnalyzer", () => {
   let analyzer: ChangeAnalyzer;
   let mockAIProvider: IAIProvider;
   let mockGitService: any;
@@ -41,18 +41,18 @@ describe('ChangeAnalyzer', () => {
       maxTokensPerBatch: 6000,
       tokenSafetyMargin: 0.9,
       maxParallelRequests: 3,
-      repoPath: '/test/repo',
+      repoPath: "/test/repo",
     });
 
     vi.clearAllMocks();
   });
 
-  describe('constructor', () => {
-    it('should create ChangeAnalyzer with valid config', () => {
+  describe("constructor", () => {
+    it("should create ChangeAnalyzer with valid config", () => {
       expect(analyzer).toBeInstanceOf(ChangeAnalyzer);
     });
 
-    it('should use default values for optional config', () => {
+    it("should use default values for optional config", () => {
       const defaultAnalyzer = new ChangeAnalyzer({
         aiProvider: mockAIProvider,
       });
@@ -61,19 +61,19 @@ describe('ChangeAnalyzer', () => {
     });
   });
 
-  describe('analyzeWorkingDirectory', () => {
+  describe("analyzeWorkingDirectory", () => {
     const mockWorkingDirectoryChanges: WorkingDirectoryChanges = {
-      type: 'working-directory',
+      type: "working-directory",
       files: [
         {
-          path: 'src/file1.ts',
-          status: 'modified',
+          path: "src/file1.ts",
+          status: "modified",
           linesAdded: 5,
           linesDeleted: 2,
         },
         {
-          path: 'src/file2.ts',
-          status: 'added',
+          path: "src/file2.ts",
+          status: "added",
           linesAdded: 10,
           linesDeleted: 0,
         },
@@ -108,44 +108,44 @@ index 0000000..1234567
     const mockAIResponse: AIAnalysisResult = {
       fileAnalyses: [
         {
-          file: 'src/file1.ts',
-          changeType: 'refactor',
+          file: "src/file1.ts",
+          changeType: "refactor",
           issues: [
             {
-              source: 'ai',
-              severity: 'medium',
-              type: 'code-smell',
-              file: 'src/file1.ts',
+              source: "ai",
+              severity: "medium",
+              type: "code-smell",
+              file: "src/file1.ts",
               line: 2,
-              message: 'Consider using a logger instead of console.log',
-              description: 'Console.log statements should be replaced with proper logging',
-              suggestion: 'Use a logging library',
+              message: "Consider using a logger instead of console.log",
+              description: "Console.log statements should be replaced with proper logging",
+              suggestion: "Use a logging library",
             },
           ],
-          summary: 'Modified helper function',
+          summary: "Modified helper function",
           linesChanged: 7,
           qualityScore: 75,
         },
         {
-          file: 'src/file2.ts',
-          changeType: 'feature',
+          file: "src/file2.ts",
+          changeType: "feature",
           issues: [],
-          summary: 'Added new function',
+          summary: "Added new function",
           linesChanged: 10,
           qualityScore: 85,
         },
       ],
       impactAnalysis: {
-        riskLevel: 'low',
-        affectedModules: ['utils'],
+        riskLevel: "low",
+        affectedModules: ["utils"],
         breakingChanges: [],
-        testingRecommendations: ['Test new function'],
+        testingRecommendations: ["Test new function"],
         deploymentRisks: [],
         qualityScore: 80,
       },
     };
 
-    it('should analyze working directory changes successfully', async () => {
+    it("should analyze working directory changes successfully", async () => {
       mockGitService.getWorkingDirectoryChanges.mockResolvedValue(mockWorkingDirectoryChanges);
       // Mock responses for quality, security, and impact analysis
       (mockAIProvider.analyzeCode as any)
@@ -155,21 +155,21 @@ index 0000000..1234567
 
       const result = await analyzer.analyzeWorkingDirectory();
 
-      expect(result.changeType).toBe('working-directory');
+      expect(result.changeType).toBe("working-directory");
       expect(result.fileAnalyses).toHaveLength(2);
-      expect(result.fileAnalyses[0].file).toBe('src/file1.ts');
+      expect(result.fileAnalyses[0].file).toBe("src/file1.ts");
       // Issues are merged from multiple analysis types, so count may be > 1
       expect(result.fileAnalyses[0].issues.length).toBeGreaterThanOrEqual(1);
-      expect(result.impactAnalysis.riskLevel).toBe('low');
+      expect(result.impactAnalysis.riskLevel).toBe("low");
       expect(result.duration).toBeGreaterThanOrEqual(0);
       expect(result.timestamp).toBeDefined();
     });
 
-    it('should handle empty working directory', async () => {
+    it("should handle empty working directory", async () => {
       const emptyChanges: WorkingDirectoryChanges = {
-        type: 'working-directory',
+        type: "working-directory",
         files: [],
-        diff: '',
+        diff: "",
         summary: {
           filesChanged: 0,
           insertions: 0,
@@ -181,13 +181,13 @@ index 0000000..1234567
 
       const result = await analyzer.analyzeWorkingDirectory();
 
-      expect(result.changeType).toBe('working-directory');
+      expect(result.changeType).toBe("working-directory");
       expect(result.fileAnalyses).toHaveLength(0);
-      expect(result.impactAnalysis.riskLevel).toBe('low');
+      expect(result.impactAnalysis.riskLevel).toBe("low");
       expect(mockAIProvider.analyzeCode).not.toHaveBeenCalled();
     });
 
-    it('should respect analysis options', async () => {
+    it("should respect analysis options", async () => {
       mockGitService.getWorkingDirectoryChanges.mockResolvedValue(mockWorkingDirectoryChanges);
       (mockAIProvider.analyzeCode as any).mockResolvedValue(JSON.stringify(mockAIResponse));
 
@@ -203,21 +203,21 @@ index 0000000..1234567
       expect(mockAIProvider.analyzeCode).toHaveBeenCalled();
     });
 
-    it('should handle AI provider errors gracefully', async () => {
+    it("should handle AI provider errors gracefully", async () => {
       mockGitService.getWorkingDirectoryChanges.mockResolvedValue(mockWorkingDirectoryChanges);
-      (mockAIProvider.analyzeCode as any).mockRejectedValue(new Error('AI service unavailable'));
+      (mockAIProvider.analyzeCode as any).mockRejectedValue(new Error("AI service unavailable"));
 
       const result = await analyzer.analyzeWorkingDirectory();
 
       // Should return default analysis results
       expect(result.fileAnalyses).toHaveLength(2);
       expect(result.fileAnalyses[0].issues).toHaveLength(0);
-      expect(result.impactAnalysis.riskLevel).toBe('low');
+      expect(result.impactAnalysis.riskLevel).toBe("low");
     });
 
-    it('should handle invalid AI response format', async () => {
+    it("should handle invalid AI response format", async () => {
       mockGitService.getWorkingDirectoryChanges.mockResolvedValue(mockWorkingDirectoryChanges);
-      (mockAIProvider.analyzeCode as any).mockResolvedValue('invalid json response');
+      (mockAIProvider.analyzeCode as any).mockResolvedValue("invalid json response");
 
       const result = await analyzer.analyzeWorkingDirectory();
 
@@ -227,15 +227,15 @@ index 0000000..1234567
     });
   });
 
-  describe('analyzeBranchComparison', () => {
+  describe("analyzeBranchComparison", () => {
     const mockBranchComparison: BranchComparison = {
-      type: 'branch-comparison',
-      baseBranch: 'main',
-      compareBranch: 'feature-branch',
+      type: "branch-comparison",
+      baseBranch: "main",
+      compareBranch: "feature-branch",
       files: [
         {
-          path: 'src/service.ts',
-          status: 'modified',
+          path: "src/service.ts",
+          status: "modified",
           linesAdded: 20,
           linesDeleted: 5,
         },
@@ -263,11 +263,11 @@ index 1234567..abcdefg 100644
       },
       commits: [
         {
-          sha: 'abc123',
-          message: 'Add new service methods',
-          author: 'Test User',
-          email: 'test@example.com',
-          date: '2025-01-20T10:00:00Z',
+          sha: "abc123",
+          message: "Add new service methods",
+          author: "Test User",
+          email: "test@example.com",
+          date: "2025-01-20T10:00:00Z",
         },
       ],
     };
@@ -275,55 +275,55 @@ index 1234567..abcdefg 100644
     const mockAIResponse: AIAnalysisResult = {
       fileAnalyses: [
         {
-          file: 'src/service.ts',
-          changeType: 'feature',
+          file: "src/service.ts",
+          changeType: "feature",
           issues: [],
-          summary: 'Added new methods',
+          summary: "Added new methods",
           linesChanged: 25,
           qualityScore: 90,
         },
       ],
       impactAnalysis: {
-        riskLevel: 'medium',
-        affectedModules: ['service'],
+        riskLevel: "medium",
+        affectedModules: ["service"],
         breakingChanges: [],
-        testingRecommendations: ['Test new methods'],
+        testingRecommendations: ["Test new methods"],
         deploymentRisks: [],
         qualityScore: 90,
       },
     };
 
-    it('should analyze branch comparison successfully', async () => {
+    it("should analyze branch comparison successfully", async () => {
       mockGitService.compareBranches.mockResolvedValue(mockBranchComparison);
-      mockGitService.getCurrentBranch.mockResolvedValue('feature-branch');
+      mockGitService.getCurrentBranch.mockResolvedValue("feature-branch");
       (mockAIProvider.analyzeCode as any).mockResolvedValue(JSON.stringify(mockAIResponse));
 
-      const result = await analyzer.analyzeBranchComparison('main', 'feature-branch');
+      const result = await analyzer.analyzeBranchComparison("main", "feature-branch");
 
-      expect(result.changeType).toBe('branch-comparison');
+      expect(result.changeType).toBe("branch-comparison");
       expect(result.fileAnalyses).toHaveLength(1);
-      expect(result.fileAnalyses[0].file).toBe('src/service.ts');
-      expect(result.impactAnalysis.riskLevel).toBe('medium');
+      expect(result.fileAnalyses[0].file).toBe("src/service.ts");
+      expect(result.impactAnalysis.riskLevel).toBe("medium");
       expect(result.duration).toBeGreaterThanOrEqual(0);
     });
 
-    it('should use current branch when compareBranch is not provided', async () => {
+    it("should use current branch when compareBranch is not provided", async () => {
       mockGitService.compareBranches.mockResolvedValue(mockBranchComparison);
-      mockGitService.getCurrentBranch.mockResolvedValue('current-branch');
+      mockGitService.getCurrentBranch.mockResolvedValue("current-branch");
       (mockAIProvider.analyzeCode as any).mockResolvedValue(JSON.stringify(mockAIResponse));
 
-      await analyzer.analyzeBranchComparison('main');
+      await analyzer.analyzeBranchComparison("main");
 
-      expect(mockGitService.compareBranches).toHaveBeenCalledWith('main', 'current-branch');
+      expect(mockGitService.compareBranches).toHaveBeenCalledWith("main", "current-branch");
     });
 
-    it('should handle empty branch comparison', async () => {
+    it("should handle empty branch comparison", async () => {
       const emptyComparison: BranchComparison = {
-        type: 'branch-comparison',
-        baseBranch: 'main',
-        compareBranch: 'feature-branch',
+        type: "branch-comparison",
+        baseBranch: "main",
+        compareBranch: "feature-branch",
         files: [],
-        diff: '',
+        diff: "",
         summary: {
           filesChanged: 0,
           insertions: 0,
@@ -334,18 +334,18 @@ index 1234567..abcdefg 100644
 
       mockGitService.compareBranches.mockResolvedValue(emptyComparison);
 
-      const result = await analyzer.analyzeBranchComparison('main', 'feature-branch');
+      const result = await analyzer.analyzeBranchComparison("main", "feature-branch");
 
       expect(result.fileAnalyses).toHaveLength(0);
       expect(mockAIProvider.analyzeCode).not.toHaveBeenCalled();
     });
 
-    it('should include commit messages in impact analysis', async () => {
+    it("should include commit messages in impact analysis", async () => {
       mockGitService.compareBranches.mockResolvedValue(mockBranchComparison);
-      mockGitService.getCurrentBranch.mockResolvedValue('feature-branch');
+      mockGitService.getCurrentBranch.mockResolvedValue("feature-branch");
       (mockAIProvider.analyzeCode as any).mockResolvedValue(JSON.stringify(mockAIResponse));
 
-      await analyzer.analyzeBranchComparison('main', 'feature-branch');
+      await analyzer.analyzeBranchComparison("main", "feature-branch");
 
       // Verify that AI provider was called with commit context
       const calls = (mockAIProvider.analyzeCode as any).mock.calls;
@@ -353,11 +353,11 @@ index 1234567..abcdefg 100644
     });
   });
 
-  describe('batch processing', () => {
+  describe("batch processing", () => {
     const createLargeChanges = (fileCount: number): WorkingDirectoryChanges => {
       const files = Array.from({ length: fileCount }, (_, i) => ({
         path: `src/file${i}.ts`,
-        status: 'modified' as const,
+        status: "modified" as const,
         linesAdded: 10,
         linesDeleted: 5,
       }));
@@ -374,10 +374,10 @@ index 1234567..abcdefg 100644
 +}
 `
         )
-        .join('\n');
+        .join("\n");
 
       return {
-        type: 'working-directory' as const,
+        type: "working-directory" as const,
         files,
         diff,
         summary: {
@@ -388,14 +388,14 @@ index 1234567..abcdefg 100644
       };
     };
 
-    it('should process multiple files in batches', async () => {
+    it("should process multiple files in batches", async () => {
       const largeChanges = createLargeChanges(5);
       mockGitService.getWorkingDirectoryChanges.mockResolvedValue(largeChanges);
 
       const mockResponse: AIAnalysisResult = {
         fileAnalyses: [],
         impactAnalysis: {
-          riskLevel: 'low',
+          riskLevel: "low",
           affectedModules: [],
           breakingChanges: [],
           testingRecommendations: [],
@@ -412,14 +412,14 @@ index 1234567..abcdefg 100644
       expect(mockAIProvider.analyzeCode).toHaveBeenCalled();
     });
 
-    it('should handle parallel batch processing', async () => {
+    it("should handle parallel batch processing", async () => {
       const largeChanges = createLargeChanges(10);
       mockGitService.getWorkingDirectoryChanges.mockResolvedValue(largeChanges);
 
       const mockResponse: AIAnalysisResult = {
         fileAnalyses: [],
         impactAnalysis: {
-          riskLevel: 'low',
+          riskLevel: "low",
           affectedModules: [],
           breakingChanges: [],
           testingRecommendations: [],
@@ -439,7 +439,7 @@ index 1234567..abcdefg 100644
       expect(duration).toBeLessThan(5000); // Should complete within 5 seconds
     });
 
-    it('should handle partial batch failures', async () => {
+    it("should handle partial batch failures", async () => {
       const largeChanges = createLargeChanges(5);
       mockGitService.getWorkingDirectoryChanges.mockResolvedValue(largeChanges);
 
@@ -449,7 +449,7 @@ index 1234567..abcdefg 100644
           JSON.stringify({
             fileAnalyses: [],
             impactAnalysis: {
-              riskLevel: 'low',
+              riskLevel: "low",
               affectedModules: [],
               breakingChanges: [],
               testingRecommendations: [],
@@ -458,7 +458,7 @@ index 1234567..abcdefg 100644
             },
           })
         )
-        .mockRejectedValueOnce(new Error('Batch failed'));
+        .mockRejectedValueOnce(new Error("Batch failed"));
 
       const result = await analyzer.analyzeWorkingDirectory();
 
@@ -468,13 +468,13 @@ index 1234567..abcdefg 100644
     });
   });
 
-  describe('analysis types', () => {
+  describe("analysis types", () => {
     const mockChanges: WorkingDirectoryChanges = {
-      type: 'working-directory',
+      type: "working-directory",
       files: [
         {
-          path: 'src/test.ts',
-          status: 'modified',
+          path: "src/test.ts",
+          status: "modified",
           linesAdded: 5,
           linesDeleted: 2,
         },
@@ -496,13 +496,13 @@ index 1234567..abcdefg 100644
       },
     };
 
-    it('should perform quality analysis when enabled', async () => {
+    it("should perform quality analysis when enabled", async () => {
       mockGitService.getWorkingDirectoryChanges.mockResolvedValue(mockChanges);
       (mockAIProvider.analyzeCode as any).mockResolvedValue(
         JSON.stringify({
           fileAnalyses: [],
           impactAnalysis: {
-            riskLevel: 'low',
+            riskLevel: "low",
             affectedModules: [],
             breakingChanges: [],
             testingRecommendations: [],
@@ -517,13 +517,13 @@ index 1234567..abcdefg 100644
       expect(mockAIProvider.analyzeCode).toHaveBeenCalled();
     });
 
-    it('should perform security analysis when enabled', async () => {
+    it("should perform security analysis when enabled", async () => {
       mockGitService.getWorkingDirectoryChanges.mockResolvedValue(mockChanges);
       (mockAIProvider.analyzeCode as any).mockResolvedValue(
         JSON.stringify({
           fileAnalyses: [],
           impactAnalysis: {
-            riskLevel: 'low',
+            riskLevel: "low",
             affectedModules: [],
             breakingChanges: [],
             testingRecommendations: [],
@@ -538,13 +538,13 @@ index 1234567..abcdefg 100644
       expect(mockAIProvider.analyzeCode).toHaveBeenCalled();
     });
 
-    it('should perform impact analysis by default', async () => {
+    it("should perform impact analysis by default", async () => {
       mockGitService.getWorkingDirectoryChanges.mockResolvedValue(mockChanges);
       (mockAIProvider.analyzeCode as any).mockResolvedValue(
         JSON.stringify({
           fileAnalyses: [],
           impactAnalysis: {
-            riskLevel: 'low',
+            riskLevel: "low",
             affectedModules: [],
             breakingChanges: [],
             testingRecommendations: [],
@@ -560,13 +560,13 @@ index 1234567..abcdefg 100644
       expect(mockAIProvider.analyzeCode).toHaveBeenCalled();
     });
 
-    it('should skip quality and security when disabled', async () => {
+    it("should skip quality and security when disabled", async () => {
       mockGitService.getWorkingDirectoryChanges.mockResolvedValue(mockChanges);
       (mockAIProvider.analyzeCode as any).mockResolvedValue(
         JSON.stringify({
           fileAnalyses: [],
           impactAnalysis: {
-            riskLevel: 'low',
+            riskLevel: "low",
             affectedModules: [],
             breakingChanges: [],
             testingRecommendations: [],
@@ -586,14 +586,14 @@ index 1234567..abcdefg 100644
     });
   });
 
-  describe('result merging', () => {
-    it('should merge file analyses from multiple analysis types', async () => {
+  describe("result merging", () => {
+    it("should merge file analyses from multiple analysis types", async () => {
       const mockChanges: WorkingDirectoryChanges = {
-        type: 'working-directory',
+        type: "working-directory",
         files: [
           {
-            path: 'src/test.ts',
-            status: 'modified',
+            path: "src/test.ts",
+            status: "modified",
             linesAdded: 5,
             linesDeleted: 2,
           },
@@ -623,25 +623,25 @@ index 1234567..abcdefg 100644
           JSON.stringify({
             fileAnalyses: [
               {
-                file: 'src/test.ts',
-                changeType: 'refactor',
+                file: "src/test.ts",
+                changeType: "refactor",
                 issues: [
                   {
-                    source: 'ai',
-                    severity: 'medium',
-                    type: 'code-smell',
-                    file: 'src/test.ts',
+                    source: "ai",
+                    severity: "medium",
+                    type: "code-smell",
+                    file: "src/test.ts",
                     line: 2,
-                    message: 'Quality issue',
+                    message: "Quality issue",
                   },
                 ],
-                summary: 'Quality analysis',
+                summary: "Quality analysis",
                 linesChanged: 7,
                 qualityScore: 75,
               },
             ],
             impactAnalysis: {
-              riskLevel: 'low',
+              riskLevel: "low",
               affectedModules: [],
               breakingChanges: [],
               testingRecommendations: [],
@@ -654,25 +654,25 @@ index 1234567..abcdefg 100644
           JSON.stringify({
             fileAnalyses: [
               {
-                file: 'src/test.ts',
-                changeType: 'refactor',
+                file: "src/test.ts",
+                changeType: "refactor",
                 issues: [
                   {
-                    source: 'ai',
-                    severity: 'high',
-                    type: 'vulnerability',
-                    file: 'src/test.ts',
+                    source: "ai",
+                    severity: "high",
+                    type: "vulnerability",
+                    file: "src/test.ts",
                     line: 2,
-                    message: 'Security issue',
+                    message: "Security issue",
                   },
                 ],
-                summary: 'Security analysis',
+                summary: "Security analysis",
                 linesChanged: 7,
                 qualityScore: 80,
               },
             ],
             impactAnalysis: {
-              riskLevel: 'medium',
+              riskLevel: "medium",
               affectedModules: [],
               breakingChanges: [],
               testingRecommendations: [],
@@ -685,7 +685,7 @@ index 1234567..abcdefg 100644
           JSON.stringify({
             fileAnalyses: [],
             impactAnalysis: {
-              riskLevel: 'low',
+              riskLevel: "low",
               affectedModules: [],
               breakingChanges: [],
               testingRecommendations: [],
@@ -701,10 +701,9 @@ index 1234567..abcdefg 100644
       });
 
       // Should merge issues from both analyses
-      const fileAnalysis = result.fileAnalyses.find((f) => f.file === 'src/test.ts');
+      const fileAnalysis = result.fileAnalyses.find((f) => f.file === "src/test.ts");
       expect(fileAnalysis).toBeDefined();
       expect(fileAnalysis!.issues.length).toBeGreaterThanOrEqual(2);
     });
   });
 });
-

@@ -5,12 +5,12 @@
 /**
  * Types of Git changes that can be analyzed
  */
-export type GitChangeType = 'working-directory' | 'branch-comparison' | 'pull-request';
+export type GitChangeType = "working-directory" | "branch-comparison" | "pull-request";
 
 /**
  * Git file change status
  */
-export type GitFileStatus = 'added' | 'modified' | 'deleted' | 'renamed' | 'copied' | 'untracked';
+export type GitFileStatus = "added" | "modified" | "deleted" | "renamed" | "copied" | "untracked";
 
 /**
  * Represents a single file change
@@ -112,14 +112,14 @@ export interface GitChangesBase {
  * Working directory changes (unstaged + staged)
  */
 export interface WorkingDirectoryChanges extends GitChangesBase {
-  type: 'working-directory';
+  type: "working-directory";
 }
 
 /**
  * Branch comparison changes
  */
 export interface BranchComparisonChanges extends GitChangesBase {
-  type: 'branch-comparison';
+  type: "branch-comparison";
   /** Base branch name */
   baseBranch: string;
   /** Compare branch name */
@@ -132,7 +132,7 @@ export interface BranchComparisonChanges extends GitChangesBase {
  * Pull request changes
  */
 export interface PullRequestChanges extends GitChangesBase {
-  type: 'pull-request';
+  type: "pull-request";
   /** PR number */
   number: number;
   /** PR title */

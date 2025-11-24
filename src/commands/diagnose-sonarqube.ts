@@ -3,54 +3,54 @@
  * Helps troubleshoot issues with SonarQube analysis
  */
 
-import * as vscode from 'vscode';
-import { SonarQubeConfigService } from '../services/sonarqube-config-service.js';
-import { SonarQubeService } from '../git-analyzer/index.js';
-import { GitService } from '../git-analyzer/index.js';
-import type { GitFileChange } from '../git-analyzer/index.js';
+import * as vscode from "vscode";
+import { SonarQubeConfigService } from "../services/sonarqube-config-service.js";
+import { SonarQubeService } from "../git-analyzer/index.js";
+import { GitService } from "../git-analyzer/index.js";
+import type { GitFileChange } from "../git-analyzer/index.js";
 
 /**
  * Diagnose SonarQube configuration and connectivity
  */
 export async function diagnoseSonarQube(context: vscode.ExtensionContext): Promise<void> {
-  const outputChannel = vscode.window.createOutputChannel('Goose: SonarQube Diagnostics');
+  const outputChannel = vscode.window.createOutputChannel("Goose: SonarQube Diagnostics");
   outputChannel.show();
 
-  outputChannel.appendLine('='.repeat(60));
-  outputChannel.appendLine('SonarQube Diagnostic Report');
-  outputChannel.appendLine('='.repeat(60));
-  outputChannel.appendLine('');
+  outputChannel.appendLine("=".repeat(60));
+  outputChannel.appendLine("SonarQube Diagnostic Report");
+  outputChannel.appendLine("=".repeat(60));
+  outputChannel.appendLine("");
 
   try {
     // 1. Check workspace folder
-    outputChannel.appendLine('1. Checking workspace folder...');
+    outputChannel.appendLine("1. Checking workspace folder...");
     const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
     if (!workspaceFolder) {
-      outputChannel.appendLine('   ✗ No workspace folder open');
+      outputChannel.appendLine("   ✗ No workspace folder open");
       return;
     }
     outputChannel.appendLine(`   ✓ Workspace: ${workspaceFolder.uri.fsPath}`);
-    outputChannel.appendLine('');
+    outputChannel.appendLine("");
 
     // 2. Check SonarQube configuration
-    outputChannel.appendLine('2. Checking SonarQube configuration...');
+    outputChannel.appendLine("2. Checking SonarQube configuration...");
     const configService = new SonarQubeConfigService(context);
     const config = await configService.getSonarQubeConfig();
 
     if (!config) {
-      outputChannel.appendLine('   ✗ No SonarQube configuration found');
+      outputChannel.appendLine("   ✗ No SonarQube configuration found");
       outputChannel.appendLine('   → Run "Goose: Add SonarQube Connection" to configure');
       return;
     }
 
     outputChannel.appendLine(`   ✓ Server URL: ${config.serverUrl}`);
     outputChannel.appendLine(`   ✓ Project Key: ${config.projectKey}`);
-    outputChannel.appendLine(`   ✓ Project Name: ${config.projectName || 'Not set'}`);
+    outputChannel.appendLine(`   ✓ Project Name: ${config.projectName || "Not set"}`);
     outputChannel.appendLine(`   ✓ Analysis Mode: ${configService.getAnalysisMode()}`);
-    outputChannel.appendLine('');
+    outputChannel.appendLine("");
 
     // 3. Test SonarQube connection
-    outputChannel.appendLine('3. Testing SonarQube server connection...');
+    outputChannel.appendLine("3. Testing SonarQube server connection...");
     const sqService = new SonarQubeService(config);
     const connectionTest = await sqService.testConnection();
 
@@ -60,12 +60,12 @@ export async function diagnoseSonarQube(context: vscode.ExtensionContext): Promi
     }
 
     outputChannel.appendLine(`   ✓ Connected successfully`);
-    outputChannel.appendLine(`   ✓ Version: ${connectionTest.version || 'Unknown'}`);
+    outputChannel.appendLine(`   ✓ Version: ${connectionTest.version || "Unknown"}`);
     outputChannel.appendLine(`   ✓ Response time: ${connectionTest.responseTime}ms`);
-    outputChannel.appendLine('');
+    outputChannel.appendLine("");
 
     // 4. Check Git repository status
-    outputChannel.appendLine('4. Checking Git repository...');
+    outputChannel.appendLine("4. Checking Git repository...");
     const gitService = new GitService(workspaceFolder.uri.fsPath);
 
     try {
@@ -73,13 +73,13 @@ export async function diagnoseSonarQube(context: vscode.ExtensionContext): Promi
       outputChannel.appendLine(`   ✓ Current branch: ${currentBranch}`);
 
       const isClean = await gitService.isClean();
-      outputChannel.appendLine(`   ✓ Working directory clean: ${isClean ? 'Yes' : 'No'}`);
+      outputChannel.appendLine(`   ✓ Working directory clean: ${isClean ? "Yes" : "No"}`);
 
       const changes = await gitService.getWorkingDirectoryChanges();
       outputChannel.appendLine(`   ✓ Changed files: ${changes.files.length}`);
 
       if (changes.files.length > 0) {
-        outputChannel.appendLine('   Changed files:');
+        outputChannel.appendLine("   Changed files:");
         changes.files.slice(0, 10).forEach((file: GitFileChange) => {
           outputChannel.appendLine(`     - ${file.path} (${file.status})`);
         });
@@ -87,18 +87,22 @@ export async function diagnoseSonarQube(context: vscode.ExtensionContext): Promi
           outputChannel.appendLine(`     ... and ${changes.files.length - 10} more`);
         }
       } else {
-        outputChannel.appendLine('   ℹ No changed files in working directory');
-        outputChannel.appendLine('   → Make some changes to files or switch to branch comparison mode');
+        outputChannel.appendLine("   ℹ No changed files in working directory");
+        outputChannel.appendLine(
+          "   → Make some changes to files or switch to branch comparison mode"
+        );
       }
-      outputChannel.appendLine('');
+      outputChannel.appendLine("");
     } catch (error) {
-      outputChannel.appendLine(`   ✗ Git error: ${error instanceof Error ? error.message : String(error)}`);
-      outputChannel.appendLine('');
+      outputChannel.appendLine(
+        `   ✗ Git error: ${error instanceof Error ? error.message : String(error)}`
+      );
+      outputChannel.appendLine("");
     }
 
     // 5. Test SonarQube scanner
-    outputChannel.appendLine('5. Testing SonarQube scanner...');
-    outputChannel.appendLine('   (This may take 30-60 seconds)');
+    outputChannel.appendLine("5. Testing SonarQube scanner...");
+    outputChannel.appendLine("   (This may take 30-60 seconds)");
 
     const scanResult = await sqService.executeScan({
       workingDirectory: workspaceFolder.uri.fsPath,
@@ -111,128 +115,148 @@ export async function diagnoseSonarQube(context: vscode.ExtensionContext): Promi
 
     outputChannel.appendLine(`   ✓ Scanner executed successfully`);
     outputChannel.appendLine(`   ✓ Execution time: ${scanResult.executionTime}ms`);
-    outputChannel.appendLine('');
+    outputChannel.appendLine("");
 
     // 6. Fetch SonarQube issues
-    outputChannel.appendLine('6. Fetching SonarQube analysis results...');
-    outputChannel.appendLine('   (Waiting 2 seconds for server processing...)');
-    await new Promise(resolve => setTimeout(resolve, 2000));
+    outputChannel.appendLine("6. Fetching SonarQube analysis results...");
+    outputChannel.appendLine("   (Waiting 2 seconds for server processing...)");
+    await new Promise((resolve) => setTimeout(resolve, 2000));
 
     const analysisResult = await sqService.getAnalysisResult(config.projectKey);
 
     outputChannel.appendLine(`   ✓ Analysis date: ${analysisResult.analysisDate}`);
     outputChannel.appendLine(`   ✓ Total issues: ${analysisResult.issues.length}`);
-    outputChannel.appendLine('');
+    outputChannel.appendLine("");
 
-    outputChannel.appendLine('   Issues by severity:');
+    outputChannel.appendLine("   Issues by severity:");
     outputChannel.appendLine(`     - BLOCKER: ${analysisResult.issuesBySeverity.BLOCKER || 0}`);
     outputChannel.appendLine(`     - CRITICAL: ${analysisResult.issuesBySeverity.CRITICAL || 0}`);
     outputChannel.appendLine(`     - MAJOR: ${analysisResult.issuesBySeverity.MAJOR || 0}`);
     outputChannel.appendLine(`     - MINOR: ${analysisResult.issuesBySeverity.MINOR || 0}`);
     outputChannel.appendLine(`     - INFO: ${analysisResult.issuesBySeverity.INFO || 0}`);
-    outputChannel.appendLine('');
+    outputChannel.appendLine("");
 
-    outputChannel.appendLine('   Issues by type:');
+    outputChannel.appendLine("   Issues by type:");
     outputChannel.appendLine(`     - BUG: ${analysisResult.issuesByType.BUG || 0}`);
-    outputChannel.appendLine(`     - VULNERABILITY: ${analysisResult.issuesByType.VULNERABILITY || 0}`);
+    outputChannel.appendLine(
+      `     - VULNERABILITY: ${analysisResult.issuesByType.VULNERABILITY || 0}`
+    );
     outputChannel.appendLine(`     - CODE_SMELL: ${analysisResult.issuesByType.CODE_SMELL || 0}`);
-    outputChannel.appendLine(`     - SECURITY_HOTSPOT: ${analysisResult.issuesByType.SECURITY_HOTSPOT || 0}`);
-    outputChannel.appendLine('');
+    outputChannel.appendLine(
+      `     - SECURITY_HOTSPOT: ${analysisResult.issuesByType.SECURITY_HOTSPOT || 0}`
+    );
+    outputChannel.appendLine("");
 
-    outputChannel.appendLine('   Metrics:');
+    outputChannel.appendLine("   Metrics:");
     outputChannel.appendLine(`     - Lines of code: ${analysisResult.metrics.linesOfCode}`);
-    outputChannel.appendLine(`     - Coverage: ${(analysisResult.metrics.coverage ?? 0).toFixed(1)}%`);
-    outputChannel.appendLine(`     - Technical debt ratio: ${(analysisResult.metrics.technicalDebtRatio ?? 0).toFixed(1)}%`);
-    outputChannel.appendLine(`     - Duplicated lines: ${(analysisResult.metrics.duplicatedLinesDensity ?? 0).toFixed(1)}%`);
-    outputChannel.appendLine('');
+    outputChannel.appendLine(
+      `     - Coverage: ${(analysisResult.metrics.coverage ?? 0).toFixed(1)}%`
+    );
+    outputChannel.appendLine(
+      `     - Technical debt ratio: ${(analysisResult.metrics.technicalDebtRatio ?? 0).toFixed(1)}%`
+    );
+    outputChannel.appendLine(
+      `     - Duplicated lines: ${(analysisResult.metrics.duplicatedLinesDensity ?? 0).toFixed(1)}%`
+    );
+    outputChannel.appendLine("");
 
-    outputChannel.appendLine('   Quality Gate:');
+    outputChannel.appendLine("   Quality Gate:");
     outputChannel.appendLine(`     - Status: ${analysisResult.qualityGate.status}`);
-    outputChannel.appendLine('');
+    outputChannel.appendLine("");
 
     // 7. Sample issues
     if (analysisResult.issues.length > 0) {
-      outputChannel.appendLine('   Sample issues (first 5):');
+      outputChannel.appendLine("   Sample issues (first 5):");
       analysisResult.issues.slice(0, 5).forEach((issue: any, index: number) => {
         outputChannel.appendLine(`   ${index + 1}. [${issue.severity}] ${issue.message}`);
         outputChannel.appendLine(`      File: ${issue.component}`);
-        outputChannel.appendLine(`      Line: ${(issue as any).line || 'N/A'}`);
+        outputChannel.appendLine(`      Line: ${(issue as any).line || "N/A"}`);
         outputChannel.appendLine(`      Type: ${issue.type}`);
-        outputChannel.appendLine('');
+        outputChannel.appendLine("");
       });
     } else {
-      outputChannel.appendLine('   ℹ No issues found');
-      outputChannel.appendLine('   This could mean:');
-      outputChannel.appendLine('     1. Your code has no issues (great!)');
-      outputChannel.appendLine('     2. SonarQube rules are not configured');
-      outputChannel.appendLine('     3. The project was not scanned properly');
-      outputChannel.appendLine('');
+      outputChannel.appendLine("   ℹ No issues found");
+      outputChannel.appendLine("   This could mean:");
+      outputChannel.appendLine("     1. Your code has no issues (great!)");
+      outputChannel.appendLine("     2. SonarQube rules are not configured");
+      outputChannel.appendLine("     3. The project was not scanned properly");
+      outputChannel.appendLine("");
     }
 
     // 8. Summary
-    outputChannel.appendLine('='.repeat(60));
-    outputChannel.appendLine('Diagnostic Summary');
-    outputChannel.appendLine('='.repeat(60));
-    outputChannel.appendLine('✓ SonarQube configuration: OK');
-    outputChannel.appendLine('✓ Server connection: OK');
-    outputChannel.appendLine('✓ Scanner execution: OK');
-    outputChannel.appendLine('✓ Analysis results retrieved: OK');
-    outputChannel.appendLine('');
-    outputChannel.appendLine('If you see 0 issues in the Git change analysis:');
-    outputChannel.appendLine('  1. Make sure you have uncommitted changes in your working directory');
+    outputChannel.appendLine("=".repeat(60));
+    outputChannel.appendLine("Diagnostic Summary");
+    outputChannel.appendLine("=".repeat(60));
+    outputChannel.appendLine("✓ SonarQube configuration: OK");
+    outputChannel.appendLine("✓ Server connection: OK");
+    outputChannel.appendLine("✓ Scanner execution: OK");
+    outputChannel.appendLine("✓ Analysis results retrieved: OK");
+    outputChannel.appendLine("");
+    outputChannel.appendLine("If you see 0 issues in the Git change analysis:");
+    outputChannel.appendLine(
+      "  1. Make sure you have uncommitted changes in your working directory"
+    );
     outputChannel.appendLine('  2. Or use "Goose: Analyze Branch Comparison" instead');
-    outputChannel.appendLine('  3. SonarQube only reports issues for changed files');
-    outputChannel.appendLine('');
+    outputChannel.appendLine("  3. SonarQube only reports issues for changed files");
+    outputChannel.appendLine("");
 
-    vscode.window.showInformationMessage('SonarQube diagnostic completed. Check output channel for details.');
+    vscode.window.showInformationMessage(
+      "SonarQube diagnostic completed. Check output channel for details."
+    );
   } catch (error) {
     const errorMsg = error instanceof Error ? error.message : String(error);
-    outputChannel.appendLine('');
-    outputChannel.appendLine('='.repeat(60));
-    outputChannel.appendLine('ERROR');
-    outputChannel.appendLine('='.repeat(60));
+    outputChannel.appendLine("");
+    outputChannel.appendLine("=".repeat(60));
+    outputChannel.appendLine("ERROR");
+    outputChannel.appendLine("=".repeat(60));
     outputChannel.appendLine(errorMsg);
 
     // Enhanced error diagnostics
-    if (errorMsg.includes('403')) {
-      outputChannel.appendLine('');
-      outputChannel.appendLine('🔍 403 Forbidden Error Analysis:');
-      outputChannel.appendLine('   This error indicates a permissions issue, not an authentication issue.');
-      outputChannel.appendLine('');
-      outputChannel.appendLine('   Common causes:');
+    if (errorMsg.includes("403")) {
+      outputChannel.appendLine("");
+      outputChannel.appendLine("🔍 403 Forbidden Error Analysis:");
+      outputChannel.appendLine(
+        "   This error indicates a permissions issue, not an authentication issue."
+      );
+      outputChannel.appendLine("");
+      outputChannel.appendLine("   Common causes:");
       outputChannel.appendLine('   1. Token type is "Analysis Token" instead of "User Token"');
       outputChannel.appendLine('   2. User lacks "Browse" permission on the project');
-      outputChannel.appendLine('   3. Project is private and user is not granted access');
-      outputChannel.appendLine('');
-      outputChannel.appendLine('   Quick fixes:');
-      outputChannel.appendLine('   ✓ Verify token type: My Account → Security → Tokens');
-      outputChannel.appendLine('   ✓ Check project permissions: Administration → Projects → project-goose → Permissions');
+      outputChannel.appendLine("   3. Project is private and user is not granted access");
+      outputChannel.appendLine("");
+      outputChannel.appendLine("   Quick fixes:");
+      outputChannel.appendLine("   ✓ Verify token type: My Account → Security → Tokens");
+      outputChannel.appendLine(
+        "   ✓ Check project permissions: Administration → Projects → project-goose → Permissions"
+      );
       outputChannel.appendLine('   ✓ Grant "Browse" permission to your user');
-      outputChannel.appendLine('');
-      outputChannel.appendLine('   📖 Detailed guide: docs/SONARQUBE_403_TROUBLESHOOTING.md');
-    } else if (errorMsg.includes('401')) {
-      outputChannel.appendLine('');
-      outputChannel.appendLine('🔍 401 Unauthorized Error Analysis:');
-      outputChannel.appendLine('   This error indicates the token is invalid or expired.');
-      outputChannel.appendLine('');
-      outputChannel.appendLine('   Quick fixes:');
-      outputChannel.appendLine('   ✓ Regenerate token in SonarQube: My Account → Security → Tokens');
+      outputChannel.appendLine("");
+      outputChannel.appendLine("   📖 Detailed guide: docs/SONARQUBE_403_TROUBLESHOOTING.md");
+    } else if (errorMsg.includes("401")) {
+      outputChannel.appendLine("");
+      outputChannel.appendLine("🔍 401 Unauthorized Error Analysis:");
+      outputChannel.appendLine("   This error indicates the token is invalid or expired.");
+      outputChannel.appendLine("");
+      outputChannel.appendLine("   Quick fixes:");
+      outputChannel.appendLine(
+        "   ✓ Regenerate token in SonarQube: My Account → Security → Tokens"
+      );
       outputChannel.appendLine('   ✓ Update connection: Run "Goose: Add SonarQube Connection"');
-      outputChannel.appendLine('   ✓ Ensure token is copied correctly (no extra spaces)');
-    } else if (errorMsg.includes('404')) {
-      outputChannel.appendLine('');
-      outputChannel.appendLine('🔍 404 Not Found Error Analysis:');
-      outputChannel.appendLine('   This error indicates the project or resource was not found.');
-      outputChannel.appendLine('');
-      outputChannel.appendLine('   Quick fixes:');
-      outputChannel.appendLine('   ✓ Verify project key is correct (check .vscode/settings.json)');
-      outputChannel.appendLine('   ✓ Ensure scanner completed successfully');
-      outputChannel.appendLine('   ✓ Check if project exists in SonarQube UI');
+      outputChannel.appendLine("   ✓ Ensure token is copied correctly (no extra spaces)");
+    } else if (errorMsg.includes("404")) {
+      outputChannel.appendLine("");
+      outputChannel.appendLine("🔍 404 Not Found Error Analysis:");
+      outputChannel.appendLine("   This error indicates the project or resource was not found.");
+      outputChannel.appendLine("");
+      outputChannel.appendLine("   Quick fixes:");
+      outputChannel.appendLine("   ✓ Verify project key is correct (check .vscode/settings.json)");
+      outputChannel.appendLine("   ✓ Ensure scanner completed successfully");
+      outputChannel.appendLine("   ✓ Check if project exists in SonarQube UI");
     }
-    outputChannel.appendLine('');
+    outputChannel.appendLine("");
 
     if (error instanceof Error && error.stack) {
-      outputChannel.appendLine('Stack trace:');
+      outputChannel.appendLine("Stack trace:");
       outputChannel.appendLine(error.stack);
     }
 

@@ -16,25 +16,18 @@
  * 5. Post comment to PR (if requested)
  */
 
-import { GitHubService } from './GitHubService.js';
-import { ChangeAnalyzer, type IAIProvider } from './ChangeAnalyzer.js';
-import { MergeService } from './MergeService.js';
-import { ReportExporter } from './ReportExporter.js';
-import { SonarQubeService } from './SonarQubeService.js';
-import type {
-  GitHubConfig,
-  PRAnalysisRequest,
-  PRAnalysisResult,
-} from '../types/github.types.js';
-import type {
-  AnalysisOptions,
-  MergedAnalysisResult,
-} from '../types/analysis.types.js';
+import { GitHubService } from "./GitHubService.js";
+import { ChangeAnalyzer, type IAIProvider } from "./ChangeAnalyzer.js";
+import { MergeService } from "./MergeService.js";
+import { ReportExporter } from "./ReportExporter.js";
+import { SonarQubeService } from "./SonarQubeService.js";
+import type { GitHubConfig, PRAnalysisRequest, PRAnalysisResult } from "../types/github.types.js";
+import type { AnalysisOptions, MergedAnalysisResult } from "../types/analysis.types.js";
 import type {
   SonarQubeConfig,
   SonarQubeAnalysisResult,
   SonarQubeConnectionTest,
-} from '../types/sonarqube.types.js';
+} from "../types/sonarqube.types.js";
 
 export interface PRAnalysisServiceConfig {
   /** GitHub configuration */
@@ -81,9 +74,9 @@ export class PRAnalysisService {
 
       // 2. Analyze using AI (working directory analysis)
       const analysisOptions: AnalysisOptions = {
-        checkQuality: request.analysisTypes?.includes('quality') ?? true,
-        checkSecurity: request.analysisTypes?.includes('security') ?? true,
-        checkArchitecture: request.analysisTypes?.includes('architecture') ?? true,
+        checkQuality: request.analysisTypes?.includes("quality") ?? true,
+        checkSecurity: request.analysisTypes?.includes("security") ?? true,
+        checkArchitecture: request.analysisTypes?.includes("architecture") ?? true,
       };
 
       // Run AI analysis on working directory changes
@@ -112,7 +105,7 @@ export class PRAnalysisService {
       };
 
       // 4. Generate report
-      const reportMarkdown = this.reportExporter.export(mergedResult, 'markdown', {
+      const reportMarkdown = this.reportExporter.export(mergedResult, "markdown", {
         includeStatistics: true,
       });
 
@@ -150,14 +143,14 @@ export class PRAnalysisService {
           qualityScore: mergedResult.impactAnalysis.qualityScore,
           riskLevel: mergedResult.impactAnalysis.riskLevel,
           issues: allIssues
-            .filter((issue) => issue.severity !== 'info') // Filter out 'info' severity
+            .filter((issue) => issue.severity !== "info") // Filter out 'info' severity
             .map((issue) => ({
               file: issue.file,
               line: issue.line,
-              severity: issue.severity as 'critical' | 'high' | 'medium' | 'low',
+              severity: issue.severity as "critical" | "high" | "medium" | "low",
               type: String(issue.type),
               message: issue.message,
-              source: issue.source as 'sonarqube' | 'ai',
+              source: issue.source as "sonarqube" | "ai",
             })),
         },
         commentId,
@@ -240,14 +233,12 @@ This automated code review was performed by **Goose Code Review**, combining:
   /**
    * Format severity breakdown as markdown
    */
-  private formatSeverityBreakdown(
-    issues: Array<{ severity: string; [key: string]: any }>
-  ): string {
+  private formatSeverityBreakdown(issues: Array<{ severity: string; [key: string]: any }>): string {
     const breakdown = {
-      critical: issues.filter((i) => i.severity === 'critical').length,
-      high: issues.filter((i) => i.severity === 'high').length,
-      medium: issues.filter((i) => i.severity === 'medium').length,
-      low: issues.filter((i) => i.severity === 'low').length,
+      critical: issues.filter((i) => i.severity === "critical").length,
+      high: issues.filter((i) => i.severity === "high").length,
+      medium: issues.filter((i) => i.severity === "medium").length,
+      low: issues.filter((i) => i.severity === "low").length,
     };
 
     const total = issues.length;
@@ -257,32 +248,32 @@ This automated code review was performed by **Goose Code Review**, combining:
       emoji: string;
       label: string;
     }> = [
-      { key: 'critical', emoji: '🔴', label: 'Critical' },
-      { key: 'high', emoji: '🟠', label: 'High' },
-      { key: 'medium', emoji: '🟡', label: 'Medium' },
-      { key: 'low', emoji: '🟢', label: 'Low' },
+      { key: "critical", emoji: "🔴", label: "Critical" },
+      { key: "high", emoji: "🟠", label: "High" },
+      { key: "medium", emoji: "🟡", label: "Medium" },
+      { key: "low", emoji: "🟢", label: "Low" },
     ];
 
     return severities
       .map(({ key, emoji, label }) => {
         const count = breakdown[key];
-        const percentage = total > 0 ? ((count / total) * 100).toFixed(1) : '0.0';
+        const percentage = total > 0 ? ((count / total) * 100).toFixed(1) : "0.0";
         const bar = this.createProgressBar(count, total);
         return `- ${emoji} **${label}**: ${count} (${percentage}%) ${bar}`;
       })
-      .join('\n');
+      .join("\n");
   }
 
   /**
    * Create a simple ASCII progress bar
    */
   private createProgressBar(value: number, max: number, width: number = 20): string {
-    if (max === 0) return '░'.repeat(width);
+    if (max === 0) return "░".repeat(width);
 
     const filled = Math.round((value / max) * width);
     const empty = width - filled;
 
-    return '█'.repeat(filled) + '░'.repeat(empty);
+    return "█".repeat(filled) + "░".repeat(empty);
   }
 
   /**
@@ -301,7 +292,9 @@ This automated code review was performed by **Goose Code Review**, combining:
           await this.sonarqubeService.testConnection();
         sonarqubeValidation = {
           available: connectionTest.success && connectionTest.version !== undefined,
-          error: !connectionTest.success ? connectionTest.error || 'Server connection failed' : undefined,
+          error: !connectionTest.success
+            ? connectionTest.error || "Server connection failed"
+            : undefined,
         };
       } catch (error) {
         sonarqubeValidation = {
@@ -317,4 +310,3 @@ This automated code review was performed by **Goose Code Review**, combining:
     };
   }
 }
-

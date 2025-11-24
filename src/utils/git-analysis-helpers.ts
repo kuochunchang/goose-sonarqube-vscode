@@ -3,9 +3,9 @@
  * Shared utilities for Git analysis commands
  */
 
-import type { AnalysisType, FileAnalysis, MergedAnalysisResult } from '../git-analyzer/index.js';
-import * as vscode from 'vscode';
-import { GitChangePanel } from '../views/git-change-panel.js';
+import type { AnalysisType, FileAnalysis, MergedAnalysisResult } from "../git-analyzer/index.js";
+import * as vscode from "vscode";
+import { GitChangePanel } from "../views/git-change-panel.js";
 
 /**
  * Get workspace folder or show error
@@ -13,7 +13,7 @@ import { GitChangePanel } from '../views/git-change-panel.js';
 export function getWorkspaceFolder(): vscode.WorkspaceFolder | null {
   const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
   if (!workspaceFolder) {
-    vscode.window.showErrorMessage('No workspace folder found. Please open a folder first.');
+    vscode.window.showErrorMessage("No workspace folder found. Please open a folder first.");
   }
   return workspaceFolder ?? null;
 }
@@ -25,38 +25,39 @@ export async function selectAnalysisTypes(
   context: vscode.ExtensionContext
 ): Promise<AnalysisType[] | undefined> {
   // Read last selected types from workspace state
-  const lastSelected = context.workspaceState.get<string[]>(
-    'git-analysis.lastSelectedTypes',
-    ['quality', 'security', 'impact']
-  );
+  const lastSelected = context.workspaceState.get<string[]>("git-analysis.lastSelectedTypes", [
+    "quality",
+    "security",
+    "impact",
+  ]);
 
   const items: vscode.QuickPickItem[] = [
     {
-      label: 'Quality',
-      description: 'Code quality, complexity, and maintainability',
-      picked: lastSelected.includes('quality'),
+      label: "Quality",
+      description: "Code quality, complexity, and maintainability",
+      picked: lastSelected.includes("quality"),
     },
     {
-      label: 'Security',
-      description: 'Security vulnerabilities and hotspots',
-      picked: lastSelected.includes('security'),
+      label: "Security",
+      description: "Security vulnerabilities and hotspots",
+      picked: lastSelected.includes("security"),
     },
     {
-      label: 'Impact',
-      description: 'Impact analysis and risk assessment',
-      picked: lastSelected.includes('impact'),
+      label: "Impact",
+      description: "Impact analysis and risk assessment",
+      picked: lastSelected.includes("impact"),
     },
     {
-      label: 'Architecture',
-      description: 'Architecture review and design patterns',
-      picked: lastSelected.includes('architecture'),
+      label: "Architecture",
+      description: "Architecture review and design patterns",
+      picked: lastSelected.includes("architecture"),
     },
   ];
 
   const selected = await vscode.window.showQuickPick(items, {
     canPickMany: true,
-    title: 'Select Analysis Types',
-    placeHolder: 'Choose analysis types (previously selected are pre-checked)',
+    title: "Select Analysis Types",
+    placeHolder: "Choose analysis types (previously selected are pre-checked)",
   });
 
   if (!selected || selected.length === 0) {
@@ -66,7 +67,7 @@ export async function selectAnalysisTypes(
   const selectedTypes = selected.map((item) => item.label.toLowerCase() as AnalysisType);
 
   // Save selection for next time
-  await context.workspaceState.update('git-analysis.lastSelectedTypes', selectedTypes);
+  await context.workspaceState.update("git-analysis.lastSelectedTypes", selectedTypes);
 
   return selectedTypes;
 }
@@ -87,7 +88,7 @@ function updatePanelProgress(message: string, increment?: number): void {
 export function showAnalyzingPanel(
   extensionUri: vscode.Uri,
   config: {
-    changeSource: 'working-directory' | 'branch-comparison' | 'pull-request';
+    changeSource: "working-directory" | "branch-comparison" | "pull-request";
     workingDirectory: string;
     sourceBranch?: string;
     targetBranch?: string;
@@ -104,13 +105,14 @@ export function showAnalyzingPanel(
     pullRequestNumber: config.pullRequestNumber,
     pullRequestTitle: config.pullRequestTitle,
     repository: config.repository,
-    status: 'analyzing',
+    status: "analyzing",
     progress: {
-      message: config.changeSource === 'pull-request'
-        ? `Analyzing PR #${config.pullRequestNumber}...`
-        : config.changeSource === 'branch-comparison'
-          ? 'Initializing branch comparison...'
-          : 'Initializing analysis...',
+      message:
+        config.changeSource === "pull-request"
+          ? `Analyzing PR #${config.pullRequestNumber}...`
+          : config.changeSource === "branch-comparison"
+            ? "Initializing branch comparison..."
+            : "Initializing analysis...",
       percentage: 0,
     },
   });
@@ -123,7 +125,7 @@ export function updatePanelWithResults(
   extensionUri: vscode.Uri,
   result: MergedAnalysisResult,
   config: {
-    changeSource: 'working-directory' | 'branch-comparison' | 'pull-request';
+    changeSource: "working-directory" | "branch-comparison" | "pull-request";
     workingDirectory: string;
     sourceBranch?: string;
     targetBranch?: string;
@@ -141,24 +143,22 @@ export function updatePanelWithResults(
     pullRequestNumber: config.pullRequestNumber,
     pullRequestTitle: config.pullRequestTitle,
     repository: config.repository,
-    status: 'completed',
+    status: "completed",
   });
 }
 
 /**
  * Update panel with error state
  */
-export function updatePanelWithError(
-  config: {
-    changeSource: 'working-directory' | 'branch-comparison' | 'pull-request';
-    workingDirectory: string;
-    sourceBranch?: string;
-    targetBranch?: string;
-    pullRequestNumber?: number;
-    pullRequestTitle?: string;
-    repository?: { owner: string; repo: string };
-  }
-): void {
+export function updatePanelWithError(config: {
+  changeSource: "working-directory" | "branch-comparison" | "pull-request";
+  workingDirectory: string;
+  sourceBranch?: string;
+  targetBranch?: string;
+  pullRequestNumber?: number;
+  pullRequestTitle?: string;
+  repository?: { owner: string; repo: string };
+}): void {
   const currentPanel = GitChangePanel.currentPanel;
   if (currentPanel) {
     currentPanel.update({
@@ -169,7 +169,7 @@ export function updatePanelWithError(
       pullRequestNumber: config.pullRequestNumber,
       pullRequestTitle: config.pullRequestTitle,
       repository: config.repository,
-      status: 'error',
+      status: "error",
     });
   }
 }
@@ -188,7 +188,9 @@ export function showCompletionMessage(result: MergedAnalysisResult): void {
 /**
  * Create progress reporter that updates both VS Code progress and panel
  */
-export function createProgressReporter(progress: vscode.Progress<{ message?: string; increment?: number }>) {
+export function createProgressReporter(
+  progress: vscode.Progress<{ message?: string; increment?: number }>
+) {
   return (message: string, increment?: number): void => {
     progress.report({ message, increment });
     updatePanelProgress(message, increment);
@@ -222,7 +224,7 @@ export function handleAnalysisError(
   error: unknown,
   errorContext: string,
   panelConfig: {
-    changeSource: 'working-directory' | 'branch-comparison' | 'pull-request';
+    changeSource: "working-directory" | "branch-comparison" | "pull-request";
     workingDirectory: string;
     sourceBranch?: string;
     targetBranch?: string;
@@ -235,4 +237,3 @@ export function handleAnalysisError(
   updatePanelWithError(panelConfig);
   vscode.window.showErrorMessage(`${errorContext}: ${errorMessage}`);
 }
-
