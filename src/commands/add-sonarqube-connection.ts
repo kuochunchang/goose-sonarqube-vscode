@@ -147,7 +147,7 @@ async function testConnection(
     vscode.window.showInformationMessage(`Testing connection to ${connection.serverUrl}...`);
 
     const timeout = vscode.workspace
-      .getConfiguration('gooseCodeReview.sonarqube')
+      .getConfiguration('gooseSonarQube')
       .get<number>('timeout', 3000);
 
     const { SonarQubeService } = await import('../git-analyzer/index.js');
