@@ -51,7 +51,11 @@
             {
                 "command": "gooseSonarQube.showGitAnalysisMenu",
                 "title": "Git Analysis Menu",
-                "category": "Goose SonarQube"
+                "category": "Goose SonarQube",
+                "icon": {
+                    "light": "resources/icons/sonar-light.svg",
+                    "dark": "resources/icons/sonar-dark.svg"
+                }
             },
             {
                 "command": "gooseSonarQube.addConnection",
