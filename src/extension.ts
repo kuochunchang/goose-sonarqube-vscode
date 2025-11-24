@@ -26,12 +26,14 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
 
   // Initialize Git Analysis Service
   const gitAnalysisService = new GitAnalysisService(context);
-  gitAnalysisService.initialize().catch((error) => {
+  try {
+    await gitAnalysisService.initialize();
+  } catch (error) {
     console.error("Failed to initialize Git Analysis Service:", error);
-    vscode.window.showWarningMessage(
+    await vscode.window.showWarningMessage(
       "Git Analysis features may not work properly. Please check your SonarQube configuration."
     );
-  });
+  }
   context.subscriptions.push(gitAnalysisService);
 
   // Register commands
@@ -96,7 +98,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     analyzeProjectSonarQubeCmd
   );
 
-  vscode.window.showInformationMessage("Goose SonarQube is ready! 🔍");
+  await vscode.window.showInformationMessage("Goose SonarQube is ready! 🔍");
 }
 
 export function deactivate(): void {

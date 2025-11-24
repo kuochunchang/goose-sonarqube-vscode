@@ -80,7 +80,7 @@ export async function showGitAnalysisMenu(
       description: "No uncommitted changes",
       detail: "Make some changes first to analyze them",
       action: async () => {
-        vscode.window.showInformationMessage("No uncommitted changes found.");
+        await vscode.window.showInformationMessage("No uncommitted changes found.");
       },
     });
   }
@@ -120,7 +120,7 @@ export async function showGitAnalysisMenu(
           // Panel already exists, just bring it to front
           // The panel will be shown automatically
         } else {
-          vscode.window.showInformationMessage("No previous results available.");
+          await vscode.window.showInformationMessage("No previous results available.");
         }
       },
     });
