@@ -2,16 +2,8 @@
  * TokenCounter Tests
  */
 
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it } from "vitest";
 import { TokenCounter } from "../TokenCounter.js";
-
-// Mock gpt-3-encoder
-vi.mock("gpt-3-encoder", () => ({
-  encode: vi.fn((text: string) => {
-    // Simple mock: approximate 1 token per 4 characters
-    return Array(Math.ceil(text.length / 4));
-  }),
-}));
 
 describe("TokenCounter", () => {
   describe("constructor", () => {
@@ -71,16 +63,11 @@ describe("TokenCounter", () => {
       expect(counter.countTokens(null as any)).toBe(0);
     });
 
-    it("should handle encoding errors gracefully", async () => {
-      const { encode } = await import("gpt-3-encoder");
-      vi.mocked(encode).mockImplementationOnce(() => {
-        throw new Error("Encoding failed");
-      });
-
+    it("should use approximate token count (4 chars per token)", () => {
       const counter = new TokenCounter({ maxTokensPerBatch: 1000 });
-      const tokens = counter.countTokens("test");
-      // Should fall back to approximate count
-      expect(tokens).toBeGreaterThan(0);
+      // 12 characters should be approximately 3 tokens
+      const tokens = counter.countTokens("Hello world!");
+      expect(tokens).toBe(3); // ceil(12/4) = 3
     });
   });
 

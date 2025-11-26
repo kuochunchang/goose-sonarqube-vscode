@@ -6,8 +6,15 @@
 import * as vscode from "vscode";
 import type { AnalysisType } from "../git-analyzer/index.js";
 import { GitAnalysisService } from "../services/git-analysis-service.js";
+import {
+  executeAnalysisWithProgress,
+  showAnalyzingPanel,
+  showCompletionMessage,
+  updatePanelWithResults,
+} from "../utils/git-analysis-helpers.js";
 import { GitChangePanel } from "../views/git-change-panel.js";
 import { analyzeBranchComparison } from "./analyze-branch.js";
+import { analyzePullRequest } from "./analyze-pull-request.js";
 import { analyzeWorkingDirectory } from "./analyze-working-directory.js";
 
 /**
@@ -24,152 +31,165 @@ export async function showGitAnalysisMenu(
   context: vscode.ExtensionContext,
   gitAnalysisService: GitAnalysisService
 ): Promise<void> {
-  // Check if we have a workspace
-  const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
-  if (!workspaceFolder) {
-    vscode.window.showErrorMessage("No workspace folder found. Please open a folder first.");
-    return;
-  }
+  // Log for debugging
+  console.log("[Goose SonarQube] showGitAnalysisMenu called");
 
-  const workingDirectory = workspaceFolder.uri.fsPath;
-
-  // Check if there are uncommitted changes
-  let hasChanges = false;
   try {
-    hasChanges = !(await gitAnalysisService.isWorkingDirectoryClean(workingDirectory));
-  } catch {
-    // Ignore error, just disable the option
-  }
+    // Check if we have a workspace
+    const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
+    if (!workspaceFolder) {
+      vscode.window.showErrorMessage("No workspace folder found. Please open a folder first.");
+      return;
+    }
+    console.log("[Goose SonarQube] Workspace folder:", workspaceFolder.uri.fsPath);
 
-  // Check if we have previous results
-  const hasPreviousResults = GitChangePanel.currentPanel !== undefined;
+    const workingDirectory = workspaceFolder.uri.fsPath;
 
-  // Build menu items
-  const menuItems: QuickMenuItem[] = [];
+    // Check if there are uncommitted changes
+    let hasChanges = false;
+    try {
+      hasChanges = !(await gitAnalysisService.isWorkingDirectoryClean(workingDirectory));
+    } catch {
+      // Ignore error, just disable the option
+    }
 
-  // === Quick Actions ===
-  if (hasChanges) {
+    // Check if we have previous results
+    const hasPreviousResults = GitChangePanel.currentPanel !== undefined;
+
+    // Build menu items
+    const menuItems: QuickMenuItem[] = [];
+
+    // === Quick Actions ===
+    if (hasChanges) {
+      menuItems.push({
+        label: "$(zap) Quick Analyze (Last Settings)",
+        description: "Analyze working directory with previous settings",
+        detail: "Fast analysis using your last selected analysis types",
+        action: async () => {
+          await analyzeWorkingDirectoryQuick(context, gitAnalysisService);
+        },
+      });
+    }
+
+    // === Main Actions ===
     menuItems.push({
-      label: "$(zap) Quick Analyze (Last Settings)",
-      description: "Analyze working directory with previous settings",
-      detail: "Fast analysis using your last selected analysis types",
+      label: "",
+      kind: vscode.QuickPickItemKind.Separator,
+    } as QuickMenuItem);
+
+    if (hasChanges) {
+      menuItems.push({
+        label: "$(git-commit) Analyze Working Directory",
+        description: "Review uncommitted changes",
+        detail: "Choose analysis types and review all uncommitted changes",
+        action: async () => {
+          await analyzeWorkingDirectory(context, gitAnalysisService);
+        },
+      });
+    } else {
+      menuItems.push({
+        label: "$(info) Working Directory Clean",
+        description: "No uncommitted changes",
+        detail: "Make some changes first to analyze them",
+        action: async () => {
+          vscode.window.showInformationMessage("No uncommitted changes found.");
+        },
+      });
+    }
+
+    menuItems.push({
+      label: "$(git-compare) Compare Branches",
+      description: "Compare two branches",
+      detail: "Select branches and analyze differences",
       action: async () => {
-        await analyzeWorkingDirectoryQuick(context, gitAnalysisService);
+        await analyzeBranchComparison(context, gitAnalysisService);
       },
     });
-  }
 
-  // === Main Actions ===
-  menuItems.push({
-    label: "",
-    kind: vscode.QuickPickItemKind.Separator,
-  } as QuickMenuItem);
-
-  if (hasChanges) {
     menuItems.push({
-      label: "$(git-commit) Analyze Working Directory",
-      description: "Review uncommitted changes",
-      detail: "Choose analysis types and review all uncommitted changes",
+      label: "$(git-pull-request) Analyze Pull Request",
+      description: "Analyze GitHub PR",
+      detail: "Review pull request changes with AI and SonarQube",
       action: async () => {
-        await analyzeWorkingDirectory(context, gitAnalysisService);
+        await analyzePullRequest(context, gitAnalysisService);
       },
     });
-  } else {
-    menuItems.push({
-      label: "$(info) Working Directory Clean",
-      description: "No uncommitted changes",
-      detail: "Make some changes first to analyze them",
-      action: async () => {
-        vscode.window.showInformationMessage("No uncommitted changes found.");
-      },
-    });
-  }
 
-  menuItems.push({
-    label: "$(git-compare) Compare Branches",
-    description: "Compare two branches",
-    detail: "Select branches and analyze differences",
-    action: async () => {
-      await analyzeBranchComparison(context, gitAnalysisService);
-    },
-  });
+    // === View Results ===
+    if (hasPreviousResults) {
+      menuItems.push({
+        label: "",
+        kind: vscode.QuickPickItemKind.Separator,
+      } as QuickMenuItem);
 
-  menuItems.push({
-    label: "$(git-pull-request) Analyze Pull Request",
-    description: "Analyze GitHub PR",
-    detail: "Review pull request changes with AI and SonarQube",
-    action: async () => {
-      const { analyzePullRequest } = await import("./analyze-pull-request.js");
-      await analyzePullRequest(context, gitAnalysisService);
-    },
-  });
+      menuItems.push({
+        label: "$(eye) View Last Results",
+        description: "Show previous analysis results",
+        detail: "Open the analysis panel with last results",
+        action: async () => {
+          if (GitChangePanel.currentPanel) {
+            // Panel already exists, just bring it to front
+            // The panel will be shown automatically
+          } else {
+            vscode.window.showInformationMessage("No previous results available.");
+          }
+        },
+      });
+    }
 
-  // === View Results ===
-  if (hasPreviousResults) {
+    // === Configuration ===
     menuItems.push({
       label: "",
       kind: vscode.QuickPickItemKind.Separator,
     } as QuickMenuItem);
 
     menuItems.push({
-      label: "$(eye) View Last Results",
-      description: "Show previous analysis results",
-      detail: "Open the analysis panel with last results",
+      label: "$(plug) Manage SonarQube Connections",
+      description: "View, edit, test, or delete SonarQube connections",
+      detail: "Interactive connection management (no need to edit settings.json)",
       action: async () => {
-        if (GitChangePanel.currentPanel) {
-          // Panel already exists, just bring it to front
-          // The panel will be shown automatically
-        } else {
-          vscode.window.showInformationMessage("No previous results available.");
-        }
+        await vscode.commands.executeCommand("gooseSonarQube.manageConnections");
       },
     });
-  }
 
-  // === Configuration ===
-  menuItems.push({
-    label: "",
-    kind: vscode.QuickPickItemKind.Separator,
-  } as QuickMenuItem);
+    menuItems.push({
+      label: "$(project) Manage Project Binding",
+      description: "View, edit, or remove current SonarQube project binding",
+      detail: "Quickly switch or update the bound SonarQube project",
+      action: async () => {
+        await vscode.commands.executeCommand("gooseSonarQube.manageProjectBinding");
+      },
+    });
 
-  menuItems.push({
-    label: "$(plug) Manage SonarQube Connections",
-    description: "View, edit, test, or delete SonarQube connections",
-    detail: "Interactive connection management (no need to edit settings.json)",
-    action: async () => {
-      await vscode.commands.executeCommand("gooseSonarQube.manageConnections");
-    },
-  });
+    menuItems.push({
+      label: "$(gear) Configure Analysis",
+      description: "Open settings",
+      detail: "Configure AI provider, SonarQube, and analysis options",
+      action: async () => {
+        await vscode.commands.executeCommand("workbench.action.openSettings", "gooseCodeReview");
+      },
+    });
 
-  menuItems.push({
-    label: "$(project) Manage Project Binding",
-    description: "View, edit, or remove current SonarQube project binding",
-    detail: "Quickly switch or update the bound SonarQube project",
-    action: async () => {
-      await vscode.commands.executeCommand("gooseSonarQube.manageProjectBinding");
-    },
-  });
+    // Show quick pick
+    console.log("[Goose SonarQube] Showing quick pick menu...");
+    const selected = await vscode.window.showQuickPick(menuItems, {
+      title: "🔍 Git Analysis Menu",
+      placeHolder: "Select an action...",
+      matchOnDescription: true,
+      matchOnDetail: true,
+    });
 
-  menuItems.push({
-    label: "$(gear) Configure Analysis",
-    description: "Open settings",
-    detail: "Configure AI provider, SonarQube, and analysis options",
-    action: async () => {
-      await vscode.commands.executeCommand("workbench.action.openSettings", "gooseCodeReview");
-    },
-  });
+    console.log("[Goose SonarQube] Quick pick result:", selected?.label);
 
-  // Show quick pick
-  const selected = await vscode.window.showQuickPick(menuItems, {
-    title: "🔍 Git Analysis Menu",
-    placeHolder: "Select an action...",
-    matchOnDescription: true,
-    matchOnDetail: true,
-  });
-
-  // Execute selected action
-  if (selected && "action" in selected) {
-    await selected.action();
+    // Execute selected action
+    if (selected && "action" in selected) {
+      await selected.action();
+    }
+  } catch (error) {
+    console.error("[Goose SonarQube] Error in showGitAnalysisMenu:", error);
+    vscode.window.showErrorMessage(
+      `Git Analysis Menu error: ${error instanceof Error ? error.message : String(error)}`
+    );
   }
 }
 
@@ -196,14 +216,6 @@ async function analyzeWorkingDirectoryQuick(
   ]);
 
   const analysisTypes = lastSelected as AnalysisType[];
-
-  // Import necessary helpers
-  const {
-    showAnalyzingPanel,
-    executeAnalysisWithProgress,
-    updatePanelWithResults,
-    showCompletionMessage,
-  } = await import("../utils/git-analysis-helpers.js");
 
   // Execute analysis
   try {

@@ -1,9 +1,7 @@
 /**
  * Token counter utility for managing AI token limits
- * Uses gpt-3-encoder for accurate token counting
+ * Uses approximation for token counting (4 chars ≈ 1 token for GPT models)
  */
-
-import { encode } from "gpt-3-encoder";
 
 /**
  * Token counting configuration
@@ -47,22 +45,20 @@ export class TokenCounter {
   }
 
   /**
-   * Count tokens in text
+   * Count tokens in text using approximation
+   * GPT models typically use ~4 characters per token for English text
+   * This is a conservative estimate that works well for code and mixed content
    * @param text - Text to count tokens for
-   * @returns Number of tokens
+   * @returns Approximate number of tokens
    */
   countTokens(text: string): number {
     if (!text || text.length === 0) {
       return 0;
     }
 
-    try {
-      const encoded = encode(text);
-      return encoded.length;
-    } catch (error) {
-      console.warn("Failed to encode text for token counting, using approximate count", error);
-      return Math.ceil(text.length / 4);
-    }
+    // Use approximation: ~4 characters per token
+    // This is slightly conservative to avoid exceeding limits
+    return Math.ceil(text.length / 4);
   }
 
   /**
