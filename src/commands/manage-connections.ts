@@ -146,3 +146,6 @@ export async function manageSonarQubeConnections(context: vscode.ExtensionContex
     }
   }
 }
+
+// Export alias for backward compatibility
+export const manageConnections = manageSonarQubeConnections;

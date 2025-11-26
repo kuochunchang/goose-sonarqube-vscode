@@ -78,3 +78,62 @@ export async function testSonarQubeConnection(context: vscode.ExtensionContext):
     vscode.window.showErrorMessage(`Connection test failed: ${errorMessage}`);
   }
 }
+
+/**
+ * Test a specific SonarQube connection by ID
+ */
+export async function testConnectionById(
+  context: vscode.ExtensionContext,
+  connectionId: string,
+  projectKey?: string
+): Promise<void> {
+  const configService = new SonarQubeConfigService(context);
+
+  try {
+    const connections = configService.getConnections();
+    const connection = connections.find((c) => c.connectionId === connectionId);
+
+    if (!connection) {
+      vscode.window.showErrorMessage(
+        `Connection "${connectionId}" not found. Please check your configuration.`
+      );
+      return;
+    }
+
+    const token = await configService.getToken(connectionId);
+    if (!token) {
+      vscode.window.showErrorMessage(
+        `Token not found for connection "${connectionId}". Please reconfigure the connection.`
+      );
+      return;
+    }
+
+    vscode.window.showInformationMessage(`Testing connection to ${connection.serverUrl}...`);
+
+    const { SonarQubeService } = await import("../git-analyzer/index.js");
+    const sqService = new SonarQubeService({
+      serverUrl: connection.serverUrl,
+      token,
+      projectKey: projectKey || "test",
+      projectName: projectKey || "test",
+      timeout: 3000,
+    });
+
+    const testResult = await sqService.testConnection();
+
+    if (testResult.success) {
+      vscode.window.showInformationMessage(
+        `✓ Connection successful!\n` +
+          `  SonarQube: ${testResult.version}\n` +
+          `  Response time: ${testResult.responseTime}ms`
+      );
+    } else {
+      vscode.window.showErrorMessage(
+        `✗ Connection failed: ${testResult.error}\n` + `  Server: ${connection.serverUrl}`
+      );
+    }
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    vscode.window.showErrorMessage(`Connection test failed: ${errorMessage}`);
+  }
+}
