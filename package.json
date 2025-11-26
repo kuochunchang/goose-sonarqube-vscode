@@ -64,10 +64,22 @@
                 "icon": "$(add)"
             },
             {
+                "command": "gooseSonarQube.manageConnections",
+                "title": "Manage SonarQube Connections",
+                "category": "Goose SonarQube",
+                "icon": "$(settings-gear)"
+            },
+            {
                 "command": "gooseSonarQube.bindProject",
                 "title": "Bind to SonarQube Project",
                 "category": "Goose SonarQube",
                 "icon": "$(link)"
+            },
+            {
+                "command": "gooseSonarQube.manageProjectBinding",
+                "title": "Manage Project Binding",
+                "category": "Goose SonarQube",
+                "icon": "$(settings)"
             },
             {
                 "command": "gooseSonarQube.testConnection",
