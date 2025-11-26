@@ -10,12 +10,73 @@ SonarQube integration and Git change analysis for VS Code.
 - **Interactive Reports**: View analysis results in a rich webview panel
 - **Export Reports**: Export analysis results to Markdown, JSON, or HTML
 
+## Installation
+
+### Install from VSIX File
+
+You can install this extension from a `.vsix` file:
+
+1. **Download the VSIX file** (e.g., `goose-sonarqube-vscode-1.0.0.vsix`)
+
+2. **Install via Command Palette**:
+   - Open VS Code
+   - Press `Ctrl+Shift+P` (or `Cmd+Shift+P` on macOS) to open Command Palette
+   - Type "Install from VSIX..." and select it
+   - Browse and select the `.vsix` file
+   - Click "Install"
+
+3. **Install via Command Line**:
+   ```bash
+   code --install-extension goose-sonarqube-vscode-1.0.0.vsix
+   ```
+
+4. **Reload VS Code** after installation to activate the extension
+
+### Build VSIX File from Source
+
+To build a VSIX file from source:
+
+```bash
+# Install dependencies
+npm install
+
+# Build the extension
+npm run build
+ㄒ
+# Package the extension
+npm run package
+# or
+vsce package
+```
+
+The VSIX file will be generated in the project root directory.
+
 ## Usage
 
 ### Setup
+
+#### Local SonarQube Server (Optional)
+
+For local development and testing, you can run SonarQube using Docker Compose:
+
+```bash
+cd docker
+docker-compose up -d
+```
+
+This will start SonarQube on http://localhost:9000. Default credentials are `admin` / `admin` (you'll be prompted to change password on first login).
+
+To stop the server:
+```bash
+docker-compose down
+```
+
+#### Configure SonarQube Connection
+
 1. Run **"Goose SonarQube: Add SonarQube Connection"** to configure your SonarQube server
    - Provide connection ID, server URL, and authentication token
    - For SonarCloud, also provide organization key
+   - For local Docker setup, use: `http://localhost:9000`
 2. Run **"Goose SonarQube: Bind to SonarQube Project"** to link your workspace
    - Select a connection and provide project key
 3. Run **"Goose SonarQube: Test SonarQube Connection"** to verify everything works
