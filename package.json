@@ -2,8 +2,9 @@
     "name": "goose-sonarqube-vscode",
     "displayName": "Goose SonarQube",
     "description": "SonarQube integration and Git change analysis for VS Code",
-    "version": "1.0.0",
+    "version": "0.2.0",
     "publisher": "kuochunchang",
+    "icon": "resources/icons/extension-icon.jpg",
     "engines": {
         "vscode": "^1.85.0"
     },
@@ -19,7 +20,11 @@
         "code-review"
     ],
     "activationEvents": [
-        "onStartupFinished"
+        "onStartupFinished",
+        "onCommand:gooseSonarQube.showGitAnalysisMenu",
+        "onCommand:gooseSonarQube.analyzeWorkingDirectory",
+        "onCommand:gooseSonarQube.analyzeBranch",
+        "onCommand:gooseSonarQube.analyzePullRequest"
     ],
     "main": "./dist/extension.js",
     "contributes": {
@@ -189,9 +194,12 @@
         }
     },
     "scripts": {
-        "build": "tsc",
-        "watch": "tsc --watch",
-        "package": "vsce package",
+        "build": "npm run compile",
+        "compile": "node esbuild.js",
+        "compile:production": "node esbuild.js --production",
+        "watch": "node esbuild.js --watch",
+        "build:tsc": "tsc",
+        "package": "npm run compile:production && vsce package",
         "test": "vitest run",
         "lint": "eslint .",
         "lint:fix": "eslint . --fix",
@@ -200,7 +208,6 @@
     },
     "dependencies": {
         "@octokit/rest": "^22.0.1",
-        "gpt-3-encoder": "^1.1.4",
         "simple-git": "^3.19.0",
         "sonarqube-scanner": "^4.3.2"
     },
@@ -211,6 +218,7 @@
         "@typescript-eslint/parser": "^8.47.0",
         "@vitest/coverage-v8": "^1.6.1",
         "@vscode/vsce": "^2.22.0",
+        "esbuild": "^0.24.0",
         "eslint": "^9.39.1",
         "eslint-config-prettier": "^10.1.8",
         "eslint-plugin-prettier": "^5.5.4",

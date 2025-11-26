@@ -5,14 +5,20 @@ src/**
 tsconfig.json
 tslint.json
 .eslintrc.json
+eslint.config.js
+esbuild.js
 .prettierrc
+.prettierignore
 .gitignore
 .git/**
+.github/**
+.claude/**
 
 # Test files
 **/__tests__/**
 **/*.test.ts
 **/*.spec.ts
+vitest.config.ts
 
 # Documentation
 *.md
@@ -26,6 +32,9 @@ node_modules/**
 *.map
 *.log
 
+# Docker and other configs
+docker/**
+
 # Keep compiled JavaScript and resources
-!dist/**
+!dist/extension.js
 !resources/**
