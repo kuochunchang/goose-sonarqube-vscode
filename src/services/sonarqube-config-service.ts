@@ -37,7 +37,7 @@ export class SonarQubeConfigService {
    * Get all configured connections
    */
   getConnections(): SonarQubeConnection[] {
-    const config = vscode.workspace.getConfiguration('gooseCodeReview.sonarqube');
+    const config = vscode.workspace.getConfiguration('gooseSonarQube');
     return config.get<SonarQubeConnection[]>('connections', []);
   }
 
@@ -45,7 +45,7 @@ export class SonarQubeConfigService {
    * Get project binding for current workspace
    */
   getProjectBinding(): SonarQubeProjectBinding | null {
-    const config = vscode.workspace.getConfiguration('gooseCodeReview.sonarqube');
+    const config = vscode.workspace.getConfiguration('gooseSonarQube');
     return config.get<SonarQubeProjectBinding | null>('projectBinding', null);
   }
 
@@ -87,7 +87,7 @@ export class SonarQubeConfigService {
     // Add connection
     connections.push(connection);
     await vscode.workspace
-      .getConfiguration('gooseCodeReview.sonarqube')
+      .getConfiguration('gooseSonarQube')
       .update('connections', connections, vscode.ConfigurationTarget.Global);
 
     // Store token securely
@@ -100,7 +100,7 @@ export class SonarQubeConfigService {
   async removeConnection(connectionId: string): Promise<void> {
     const connections = this.getConnections().filter(c => c.connectionId !== connectionId);
     await vscode.workspace
-      .getConfiguration('gooseCodeReview.sonarqube')
+      .getConfiguration('gooseSonarQube')
       .update('connections', connections, vscode.ConfigurationTarget.Global);
 
     // Delete stored token
@@ -124,7 +124,7 @@ export class SonarQubeConfigService {
     }
 
     await vscode.workspace
-      .getConfiguration('gooseCodeReview.sonarqube')
+      .getConfiguration('gooseSonarQube')
       .update('projectBinding', binding, vscode.ConfigurationTarget.Workspace);
   }
 
@@ -133,7 +133,7 @@ export class SonarQubeConfigService {
    */
   async clearProjectBinding(): Promise<void> {
     await vscode.workspace
-      .getConfiguration('gooseCodeReview.sonarqube')
+      .getConfiguration('gooseSonarQube')
       .update('projectBinding', null, vscode.ConfigurationTarget.Workspace);
   }
 
@@ -168,7 +168,7 @@ export class SonarQubeConfigService {
     console.log('[SonarQube Config] Token found (length:', token.length, ')');
 
     const timeout = vscode.workspace
-      .getConfiguration('gooseCodeReview.sonarqube')
+      .getConfiguration('gooseSonarQube')
       .get<number>('timeout', 3000);
 
     console.log('[SonarQube Config] Config ready - projectKey:', binding.projectKey);
@@ -187,7 +187,7 @@ export class SonarQubeConfigService {
    */
   isEnabled(): boolean {
     return vscode.workspace
-      .getConfiguration('gooseCodeReview.sonarqube')
+      .getConfiguration('gooseSonarQube')
       .get<boolean>('enabled', true);
   }
 

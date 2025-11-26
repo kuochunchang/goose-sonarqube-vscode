@@ -137,7 +137,7 @@ export async function analyzePullRequest(
                 // Prompt user to enter GitHub token
                 const tokenInput = await vscode.window.showInputBox({
                     prompt: 'Enter your GitHub Personal Access Token (按 \'Enter\' 鍵確認或按 \'Esc\' 鍵取消)',
-                    placeHolder: 'ghp_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
+                    placeHolder: 'ghp_YOUR_TOKEN_HERE',
                     password: true,
                     ignoreFocusOut: true,
                     validateInput: (value) => {

@@ -1,0 +1,7 @@
+{
+    "gooseSonarQube.projectBinding": {
+        "connectionId": "local-sonarqube",
+        "projectKey": "goose-sonarqube-vscode",
+        "projectName": ""
+    }
+}

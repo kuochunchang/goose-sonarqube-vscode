@@ -1,0 +1,44 @@
+# Source files
+src/**
+tsconfig.json
+.vscode/**
+
+# Build artifacts
+*.ts
+*.map
+
+# Development dependencies only
+node_modules/@types/**
+node_modules/@vscode/**
+node_modules/typescript/**
+node_modules/vitest/**
+
+# Git files
+.git/**
+.gitignore
+.gitattributes
+
+# CI/CD
+.github/**
+
+# Docker
+docker/**
+
+# Documentation
+*.md
+!README.md
+
+# Test files
+**/*.test.ts
+**/*.test.js
+**/*.spec.ts
+**/*.spec.js
+
+# Editor files
+.vscode-test/**
+.DS_Store
+
+# Misc
+*.vsix
+esbuild.js
+

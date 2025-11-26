@@ -82,6 +82,7 @@ export class GitAnalysisService {
         await this.initializeSonarQube();
       } else {
         console.log('[Git Analysis] SonarQube is disabled, skipping initialization');
+        this.orchestrator = null;
       }
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);
@@ -107,16 +108,22 @@ export class GitAnalysisService {
         const detectionResult = await this.orchestrator.detectMode();
         console.log('[Git Analysis] Mode detection result:', detectionResult.mode);
         console.log('[Git Analysis] SonarQube available:', detectionResult.sonarQubeAvailable);
+
+        // Verify that SonarQube is actually available
+        if (!detectionResult.sonarQubeAvailable) {
+          console.warn('[Git Analysis] SonarQube detected as unavailable despite having config');
+          console.warn('[Git Analysis] Detection messages:', detectionResult.messages);
+        }
       } catch (error) {
-        // If detectMode fails (e.g., no providers available), log warning but continue
-        console.warn('[Git Analysis] Failed to detect analysis mode:', error);
-        // Create a minimal orchestrator that will skip analysis
-        this.orchestrator = new AnalysisOrchestrator(undefined, false);
+        // If detectMode fails, it means no providers are available at all
+        console.error('[Git Analysis] Failed to detect analysis mode:', error);
+        // Clear orchestrator and let the analysis methods fail with proper error messages
+        this.orchestrator = null;
       }
     } else {
-      console.log('[Git Analysis] No SonarQube config');
-      // No SonarQube config - create empty orchestrator
-      this.orchestrator = new AnalysisOrchestrator(undefined, false);
+      console.log('[Git Analysis] No SonarQube config found');
+      // Don't create an orchestrator if there's no config - this allows proper error handling later
+      this.orchestrator = null;
     }
   }
 
