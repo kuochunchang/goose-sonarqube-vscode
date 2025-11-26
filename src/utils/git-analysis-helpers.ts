@@ -25,10 +25,11 @@ export async function selectAnalysisTypes(
   context: vscode.ExtensionContext
 ): Promise<AnalysisType[] | undefined> {
   // Read last selected types from workspace state
-  const lastSelected = context.workspaceState.get<string[]>(
-    'git-analysis.lastSelectedTypes',
-    ['quality', 'security', 'impact']
-  );
+  const lastSelected = context.workspaceState.get<string[]>('git-analysis.lastSelectedTypes', [
+    'quality',
+    'security',
+    'impact',
+  ]);
 
   const items: vscode.QuickPickItem[] = [
     {
@@ -106,11 +107,12 @@ export function showAnalyzingPanel(
     repository: config.repository,
     status: 'analyzing',
     progress: {
-      message: config.changeSource === 'pull-request'
-        ? `Analyzing PR #${config.pullRequestNumber}...`
-        : config.changeSource === 'branch-comparison'
-          ? 'Initializing branch comparison...'
-          : 'Initializing analysis...',
+      message:
+        config.changeSource === 'pull-request'
+          ? `Analyzing PR #${config.pullRequestNumber}...`
+          : config.changeSource === 'branch-comparison'
+            ? 'Initializing branch comparison...'
+            : 'Initializing analysis...',
       percentage: 0,
     },
   });
@@ -148,17 +150,15 @@ export function updatePanelWithResults(
 /**
  * Update panel with error state
  */
-export function updatePanelWithError(
-  config: {
-    changeSource: 'working-directory' | 'branch-comparison' | 'pull-request';
-    workingDirectory: string;
-    sourceBranch?: string;
-    targetBranch?: string;
-    pullRequestNumber?: number;
-    pullRequestTitle?: string;
-    repository?: { owner: string; repo: string };
-  }
-): void {
+export function updatePanelWithError(config: {
+  changeSource: 'working-directory' | 'branch-comparison' | 'pull-request';
+  workingDirectory: string;
+  sourceBranch?: string;
+  targetBranch?: string;
+  pullRequestNumber?: number;
+  pullRequestTitle?: string;
+  repository?: { owner: string; repo: string };
+}): void {
   const currentPanel = GitChangePanel.currentPanel;
   if (currentPanel) {
     currentPanel.update({
@@ -188,7 +188,9 @@ export function showCompletionMessage(result: MergedAnalysisResult): void {
 /**
  * Create progress reporter that updates both VS Code progress and panel
  */
-export function createProgressReporter(progress: vscode.Progress<{ message?: string; increment?: number }>) {
+export function createProgressReporter(
+  progress: vscode.Progress<{ message?: string; increment?: number }>
+) {
   return (message: string, increment?: number): void => {
     progress.report({ message, increment });
     updatePanelProgress(message, increment);
@@ -235,4 +237,3 @@ export function handleAnalysisError(
   updatePanelWithError(panelConfig);
   vscode.window.showErrorMessage(`${errorContext}: ${errorMessage}`);
 }
-

@@ -74,18 +74,13 @@ export async function analyzeWorkingDirectory(
   } catch (error) {
     const workspaceFolder = getWorkspaceFolder();
     if (workspaceFolder) {
-      handleAnalysisError(
-        error,
-        'Failed to analyze working directory',
-        {
-          changeSource: 'working-directory',
-          workingDirectory: workspaceFolder.uri.fsPath,
-        }
-      );
+      handleAnalysisError(error, 'Failed to analyze working directory', {
+        changeSource: 'working-directory',
+        workingDirectory: workspaceFolder.uri.fsPath,
+      });
     } else {
       const errorMessage = error instanceof Error ? error.message : String(error);
       vscode.window.showErrorMessage(`Failed to analyze working directory: ${errorMessage}`);
     }
   }
 }
-

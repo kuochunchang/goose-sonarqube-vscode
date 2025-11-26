@@ -20,101 +20,99 @@ import { GitAnalysisService } from './services/git-analysis-service.js';
 const outputChannel = vscode.window.createOutputChannel('Goose SonarQube');
 
 export async function activate(context: vscode.ExtensionContext): Promise<void> {
-    outputChannel.appendLine('Goose SonarQube extension is now active');
-    console.log('Goose SonarQube extension is now active');
+  outputChannel.appendLine('Goose SonarQube extension is now active');
+  console.log('Goose SonarQube extension is now active');
 
-    (global as any).gooseOutputChannel = outputChannel;
-    context.subscriptions.push(outputChannel);
+  (global as any).gooseOutputChannel = outputChannel;
+  context.subscriptions.push(outputChannel);
 
-    // Initialize Git Analysis Service
-    const gitAnalysisService = new GitAnalysisService(context);
-    gitAnalysisService.initialize().catch((error) => {
-        console.error('Failed to initialize Git Analysis Service:', error);
-        vscode.window.showWarningMessage(
-            'Git Analysis features may not work properly. Please check your SonarQube configuration.'
-        );
-    });
-    context.subscriptions.push(gitAnalysisService);
-
-    // Register commands
-    const analyzeWorkingDirectoryCmd = vscode.commands.registerCommand(
-        'gooseSonarQube.analyzeWorkingDirectory',
-        () => analyzeWorkingDirectory(context, gitAnalysisService)
+  // Initialize Git Analysis Service
+  const gitAnalysisService = new GitAnalysisService(context);
+  gitAnalysisService.initialize().catch((error) => {
+    console.error('Failed to initialize Git Analysis Service:', error);
+    vscode.window.showWarningMessage(
+      'Git Analysis features may not work properly. Please check your SonarQube configuration.'
     );
+  });
+  context.subscriptions.push(gitAnalysisService);
 
-    const analyzeBranchCmd = vscode.commands.registerCommand(
-        'gooseSonarQube.analyzeBranch',
-        () => analyzeBranchComparison(context, gitAnalysisService)
-    );
+  // Register commands
+  const analyzeWorkingDirectoryCmd = vscode.commands.registerCommand(
+    'gooseSonarQube.analyzeWorkingDirectory',
+    () => analyzeWorkingDirectory(context, gitAnalysisService)
+  );
 
-    const analyzePullRequestCmd = vscode.commands.registerCommand(
-        'gooseSonarQube.analyzePullRequest',
-        async () => {
-            const { analyzePullRequest } = await import('./commands/analyze-pull-request.js');
-            await analyzePullRequest(context, gitAnalysisService);
-        }
-    );
+  const analyzeBranchCmd = vscode.commands.registerCommand('gooseSonarQube.analyzeBranch', () =>
+    analyzeBranchComparison(context, gitAnalysisService)
+  );
 
-    const openGitChangePanelCmd = vscode.commands.registerCommand(
-        'gooseSonarQube.openGitChangePanel',
-        () => openGitChangePanel(context)
-    );
+  const analyzePullRequestCmd = vscode.commands.registerCommand(
+    'gooseSonarQube.analyzePullRequest',
+    async () => {
+      const { analyzePullRequest } = await import('./commands/analyze-pull-request.js');
+      await analyzePullRequest(context, gitAnalysisService);
+    }
+  );
 
-    const gitAnalysisMenuCmd = vscode.commands.registerCommand(
-        'gooseSonarQube.showGitAnalysisMenu',
-        () => showGitAnalysisMenu(context, gitAnalysisService)
-    );
+  const openGitChangePanelCmd = vscode.commands.registerCommand(
+    'gooseSonarQube.openGitChangePanel',
+    () => openGitChangePanel(context)
+  );
 
-    const addSonarQubeConnectionCmd = vscode.commands.registerCommand(
-        'gooseSonarQube.addConnection',
-        () => addSonarQubeConnection(context)
-    );
+  const gitAnalysisMenuCmd = vscode.commands.registerCommand(
+    'gooseSonarQube.showGitAnalysisMenu',
+    () => showGitAnalysisMenu(context, gitAnalysisService)
+  );
 
-    const manageConnectionsCmd = vscode.commands.registerCommand(
-        'gooseSonarQube.manageConnections',
-        () => manageSonarQubeConnections(context)
-    );
+  const addSonarQubeConnectionCmd = vscode.commands.registerCommand(
+    'gooseSonarQube.addConnection',
+    () => addSonarQubeConnection(context)
+  );
 
-    const bindSonarQubeProjectCmd = vscode.commands.registerCommand(
-        'gooseSonarQube.bindProject',
-        () => bindSonarQubeProject(context)
-    );
+  const manageConnectionsCmd = vscode.commands.registerCommand(
+    'gooseSonarQube.manageConnections',
+    () => manageSonarQubeConnections(context)
+  );
 
-    const manageProjectBindingCmd = vscode.commands.registerCommand(
-        'gooseSonarQube.manageProjectBinding',
-        () => manageProjectBinding(context)
-    );
+  const bindSonarQubeProjectCmd = vscode.commands.registerCommand(
+    'gooseSonarQube.bindProject',
+    () => bindSonarQubeProject(context)
+  );
 
-    const testSonarQubeConnectionCmd = vscode.commands.registerCommand(
-        'gooseSonarQube.testConnection',
-        () => testSonarQubeConnection(context)
-    );
+  const manageProjectBindingCmd = vscode.commands.registerCommand(
+    'gooseSonarQube.manageProjectBinding',
+    () => manageProjectBinding(context)
+  );
 
-    const diagnoseSonarQubeCmd = vscode.commands.registerCommand(
-        'gooseSonarQube.diagnose',
-        () => diagnoseSonarQube(context)
-    );
+  const testSonarQubeConnectionCmd = vscode.commands.registerCommand(
+    'gooseSonarQube.testConnection',
+    () => testSonarQubeConnection(context)
+  );
 
-    const analyzeProjectSonarQubeCmd = registerAnalyzeProjectSonarQubeCommand(context);
+  const diagnoseSonarQubeCmd = vscode.commands.registerCommand('gooseSonarQube.diagnose', () =>
+    diagnoseSonarQube(context)
+  );
 
-    context.subscriptions.push(
-        analyzeWorkingDirectoryCmd,
-        analyzeBranchCmd,
-        analyzePullRequestCmd,
-        openGitChangePanelCmd,
-        gitAnalysisMenuCmd,
-        addSonarQubeConnectionCmd,
-        manageConnectionsCmd,
-        bindSonarQubeProjectCmd,
-        manageProjectBindingCmd,
-        testSonarQubeConnectionCmd,
-        diagnoseSonarQubeCmd,
-        analyzeProjectSonarQubeCmd
-    );
+  const analyzeProjectSonarQubeCmd = registerAnalyzeProjectSonarQubeCommand(context);
 
-    vscode.window.showInformationMessage('Goose SonarQube is ready! 🔍');
+  context.subscriptions.push(
+    analyzeWorkingDirectoryCmd,
+    analyzeBranchCmd,
+    analyzePullRequestCmd,
+    openGitChangePanelCmd,
+    gitAnalysisMenuCmd,
+    addSonarQubeConnectionCmd,
+    manageConnectionsCmd,
+    bindSonarQubeProjectCmd,
+    manageProjectBindingCmd,
+    testSonarQubeConnectionCmd,
+    diagnoseSonarQubeCmd,
+    analyzeProjectSonarQubeCmd
+  );
+
+  vscode.window.showInformationMessage('Goose SonarQube is ready! 🔍');
 }
 
 export function deactivate(): void {
-    console.log('Goose SonarQube extension is now deactivated');
+  console.log('Goose SonarQube extension is now deactivated');
 }

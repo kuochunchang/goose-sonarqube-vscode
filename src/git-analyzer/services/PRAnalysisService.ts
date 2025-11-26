@@ -21,15 +21,8 @@ import { ChangeAnalyzer, type IAIProvider } from './ChangeAnalyzer.js';
 import { MergeService } from './MergeService.js';
 import { ReportExporter } from './ReportExporter.js';
 import { SonarQubeService } from './SonarQubeService.js';
-import type {
-  GitHubConfig,
-  PRAnalysisRequest,
-  PRAnalysisResult,
-} from '../types/github.types.js';
-import type {
-  AnalysisOptions,
-  MergedAnalysisResult,
-} from '../types/analysis.types.js';
+import type { GitHubConfig, PRAnalysisRequest, PRAnalysisResult } from '../types/github.types.js';
+import type { AnalysisOptions, MergedAnalysisResult } from '../types/analysis.types.js';
 import type {
   SonarQubeConfig,
   SonarQubeAnalysisResult,
@@ -240,9 +233,7 @@ This automated code review was performed by **Goose Code Review**, combining:
   /**
    * Format severity breakdown as markdown
    */
-  private formatSeverityBreakdown(
-    issues: Array<{ severity: string; [key: string]: any }>
-  ): string {
+  private formatSeverityBreakdown(issues: Array<{ severity: string; [key: string]: any }>): string {
     const breakdown = {
       critical: issues.filter((i) => i.severity === 'critical').length,
       high: issues.filter((i) => i.severity === 'high').length,
@@ -301,7 +292,9 @@ This automated code review was performed by **Goose Code Review**, combining:
           await this.sonarqubeService.testConnection();
         sonarqubeValidation = {
           available: connectionTest.success && connectionTest.version !== undefined,
-          error: !connectionTest.success ? connectionTest.error || 'Server connection failed' : undefined,
+          error: !connectionTest.success
+            ? connectionTest.error || 'Server connection failed'
+            : undefined,
         };
       } catch (error) {
         sonarqubeValidation = {
@@ -317,4 +310,3 @@ This automated code review was performed by **Goose Code Review**, combining:
     };
   }
 }
-

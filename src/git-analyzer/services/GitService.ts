@@ -49,7 +49,7 @@ export class GitService {
     const diffSummary = await this.git.diffSummary();
 
     // Parse files
-    const files: GitFileChange[] = status.files.map(file => ({
+    const files: GitFileChange[] = status.files.map((file) => ({
       path: file.path,
       status: this.mapFileStatus(file.index || file.working_dir),
       linesAdded: 0, // Will be calculated from diffSummary
@@ -57,8 +57,8 @@ export class GitService {
     }));
 
     // Enhance file info with diff statistics
-    diffSummary.files.forEach(diffFile => {
-      const fileChange = files.find(f => f.path === diffFile.file);
+    diffSummary.files.forEach((diffFile) => {
+      const fileChange = files.find((f) => f.path === diffFile.file);
       if (fileChange && 'insertions' in diffFile && 'deletions' in diffFile) {
         fileChange.linesAdded = diffFile.insertions;
         fileChange.linesDeleted = diffFile.deletions;
@@ -108,7 +108,7 @@ export class GitService {
     });
 
     // Parse files
-    const files: GitFileChange[] = diffSummary.files.map(file => ({
+    const files: GitFileChange[] = diffSummary.files.map((file) => ({
       path: file.file,
       status: this.inferFileStatus('binary' in file ? file.binary : false),
       linesAdded: 'insertions' in file ? file.insertions : 0,
@@ -116,7 +116,7 @@ export class GitService {
     }));
 
     // Parse commits
-    const commits: GitCommit[] = log.all.map(commit => ({
+    const commits: GitCommit[] = log.all.map((commit) => ({
       sha: commit.hash,
       message: commit.message,
       author: commit.author_name,
@@ -277,7 +277,12 @@ export class GitService {
   /**
    * Get list of all branches
    */
-  async getBranches(): Promise<{ all: string[]; current: string; local: string[]; remote: string[] }> {
+  async getBranches(): Promise<{
+    all: string[];
+    current: string;
+    local: string[];
+    remote: string[];
+  }> {
     const branchSummary = await this.git.branch(['-a']);
     const currentBranch = await this.getCurrentBranch();
 
@@ -285,12 +290,12 @@ export class GitService {
       all: branchSummary.all,
       current: currentBranch,
       local: branchSummary.branches
-        ? Object.keys(branchSummary.branches).filter(b => !b.startsWith('remotes/'))
+        ? Object.keys(branchSummary.branches).filter((b) => !b.startsWith('remotes/'))
         : [],
       remote: branchSummary.branches
         ? Object.keys(branchSummary.branches)
-          .filter(b => b.startsWith('remotes/'))
-          .map(b => b.replace(/^remotes\//, ''))
+            .filter((b) => b.startsWith('remotes/'))
+            .map((b) => b.replace(/^remotes\//, ''))
         : [],
     };
   }

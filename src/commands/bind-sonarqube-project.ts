@@ -12,9 +12,7 @@ import {
 /**
  * Bind workspace to a SonarQube project
  */
-export async function bindSonarQubeProject(
-  context: vscode.ExtensionContext
-): Promise<void> {
+export async function bindSonarQubeProject(context: vscode.ExtensionContext): Promise<void> {
   const configService = new SonarQubeConfigService(context);
 
   try {
@@ -89,4 +87,3 @@ export async function bindSonarQubeProject(
     vscode.window.showErrorMessage(`Failed to bind SonarQube project: ${errorMessage}`);
   }
 }
-

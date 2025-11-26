@@ -86,7 +86,11 @@ export class AnalysisCacheService {
    * @param ttl Time-to-live in seconds (default: 24 hours)
    * @param enabled Whether caching is enabled
    */
-  constructor(cacheDir: string = '.goose-review-cache', ttl: number = 86400, enabled: boolean = true) {
+  constructor(
+    cacheDir: string = '.goose-review-cache',
+    ttl: number = 86400,
+    enabled: boolean = true
+  ) {
     this.cacheDir = resolve(process.cwd(), cacheDir);
     this.ttl = ttl;
     this.enabled = enabled;
@@ -182,7 +186,9 @@ export class AnalysisCacheService {
       await writeFile(filePath, JSON.stringify(entry, null, 2), 'utf-8');
     } catch (error) {
       // Silently fail on cache write errors
-      console.warn(`Failed to write cache: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      console.warn(
+        `Failed to write cache: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
     }
   }
 

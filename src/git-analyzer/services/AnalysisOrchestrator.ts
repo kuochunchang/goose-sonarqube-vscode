@@ -103,7 +103,7 @@ export class AnalysisOrchestrator {
         sonarQubeMode = this.sonarQubeService.getMode();
         sonarQubeVersion = connectionTest.version;
         messages.push(
-          `✓ SonarQube server connected (v${sonarQubeVersion}, ${connectionTest.responseTime}ms)`,
+          `✓ SonarQube server connected (v${sonarQubeVersion}, ${connectionTest.responseTime}ms)`
         );
       } else {
         messages.push(`✗ SonarQube server unavailable: ${connectionTest.error}`);
@@ -127,7 +127,7 @@ export class AnalysisOrchestrator {
       messages.push('✓ Analysis mode: AI_ONLY (SonarQube unavailable)');
     } else {
       throw new Error(
-        'No analysis provider available. Configure either SonarQube server or AI provider.',
+        'No analysis provider available. Configure either SonarQube server or AI provider.'
       );
     }
 
@@ -183,7 +183,7 @@ export class AnalysisOrchestrator {
    */
   static async createWithConfig(
     configPath?: string,
-    aiProviderAvailable: boolean = false,
+    aiProviderAvailable: boolean = false
   ): Promise<AnalysisOrchestrator> {
     let sonarQubeService: SonarQubeService | undefined;
 
@@ -220,7 +220,9 @@ export class AnalysisOrchestrator {
       lines.push(`  SonarQube Version: ${this.detectionResult.sonarQubeVersion}`);
     }
 
-    lines.push(`  AI Provider: ${this.detectionResult.aiProviderAvailable ? '✓ Available' : '✗ Unavailable'}`);
+    lines.push(
+      `  AI Provider: ${this.detectionResult.aiProviderAvailable ? '✓ Available' : '✗ Unavailable'}`
+    );
     lines.push('─────────────────────────────────────────');
 
     return lines.join('\n');

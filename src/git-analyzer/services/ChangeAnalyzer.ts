@@ -77,9 +77,7 @@ export class ChangeAnalyzer {
    * @param options - Analysis options
    * @returns Complete analysis result
    */
-  async analyzeWorkingDirectory(
-    options: AnalysisOptions = {}
-  ): Promise<ChangeAnalysisResult> {
+  async analyzeWorkingDirectory(options: AnalysisOptions = {}): Promise<ChangeAnalysisResult> {
     const startTime = Date.now();
 
     const changes = await this.gitService.getWorkingDirectoryChanges();
@@ -161,8 +159,7 @@ export class ChangeAnalyzer {
       console.log('Architecture Review:', architectureReview);
     }
 
-    const commitMessages =
-      changes.type !== 'working-directory' ? changes.commits : undefined;
+    const commitMessages = changes.type !== 'working-directory' ? changes.commits : undefined;
     const impactResults = await this.analyzeImpact(parsedChanges, commitMessages);
     impactAnalysis = impactResults.impactAnalysis;
     this.mergeFileAnalyses(fileAnalyses, impactResults.fileAnalyses);
@@ -185,9 +182,7 @@ export class ChangeAnalyzer {
    * @param parsedChanges - Parsed file changes
    * @returns AI analysis result
    */
-  private async analyzeQuality(
-    parsedChanges: ParsedFileChange[]
-  ): Promise<AIAnalysisResult> {
+  private async analyzeQuality(parsedChanges: ParsedFileChange[]): Promise<AIAnalysisResult> {
     const batches = this.createSmartBatches(parsedChanges);
     const results = await this.processBatchesInParallel(batches, 'quality');
 
@@ -199,9 +194,7 @@ export class ChangeAnalyzer {
    * @param parsedChanges - Parsed file changes
    * @returns AI analysis result
    */
-  private async analyzeSecurity(
-    parsedChanges: ParsedFileChange[]
-  ): Promise<AIAnalysisResult> {
+  private async analyzeSecurity(parsedChanges: ParsedFileChange[]): Promise<AIAnalysisResult> {
     const batches = this.createSmartBatches(parsedChanges);
     const results = await this.processBatchesInParallel(batches, 'security');
 
@@ -216,14 +209,13 @@ export class ChangeAnalyzer {
    */
   private async analyzeImpact(
     parsedChanges: ParsedFileChange[],
-    commits?:
-      | Array<{
-          sha: string;
-          message: string;
-          author: string;
-          email: string;
-          date: string;
-        }>
+    commits?: Array<{
+      sha: string;
+      message: string;
+      author: string;
+      email: string;
+      date: string;
+    }>
   ): Promise<AIAnalysisResult> {
     const batches = this.createSmartBatches(parsedChanges);
     const commitMessages = commits?.map((c) => c.message);
@@ -408,10 +400,7 @@ export class ChangeAnalyzer {
    * @param batch - Original batch (fallback)
    * @returns AI analysis result
    */
-  private parseAIResponse(
-    response: any,
-    batch: ParsedFileChange[]
-  ): AIAnalysisResult {
+  private parseAIResponse(response: any, batch: ParsedFileChange[]): AIAnalysisResult {
     try {
       const parsed = typeof response === 'string' ? JSON.parse(response) : response;
 
@@ -566,10 +555,7 @@ export class ChangeAnalyzer {
    * @param startTime - Start timestamp
    * @returns Empty analysis result
    */
-  private createEmptyResult(
-    changes: GitChanges,
-    startTime: number
-  ): ChangeAnalysisResult {
+  private createEmptyResult(changes: GitChanges, startTime: number): ChangeAnalysisResult {
     return {
       changeType: changes.type,
       summary: changes.summary,

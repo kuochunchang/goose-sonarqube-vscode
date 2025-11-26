@@ -135,4 +135,3 @@ export interface PRAnalysisResult {
   /** Comment URL (if posted) */
   commentUrl?: string;
 }
-

@@ -78,9 +78,9 @@ export class SonarQubeConfigService {
    */
   async addConnection(connection: SonarQubeConnection, token: string): Promise<void> {
     const connections = this.getConnections();
-    
+
     // Check if connectionId already exists
-    if (connections.some(c => c.connectionId === connection.connectionId)) {
+    if (connections.some((c) => c.connectionId === connection.connectionId)) {
       throw new Error(`Connection with ID "${connection.connectionId}" already exists`);
     }
 
@@ -98,7 +98,7 @@ export class SonarQubeConfigService {
    * Remove a connection
    */
   async removeConnection(connectionId: string): Promise<void> {
-    const connections = this.getConnections().filter(c => c.connectionId !== connectionId);
+    const connections = this.getConnections().filter((c) => c.connectionId !== connectionId);
     await vscode.workspace
       .getConfiguration('gooseSonarQube')
       .update('connections', connections, vscode.ConfigurationTarget.Global);
@@ -119,7 +119,7 @@ export class SonarQubeConfigService {
   async setProjectBinding(binding: SonarQubeProjectBinding): Promise<void> {
     // Verify connection exists
     const connections = this.getConnections();
-    if (!connections.some(c => c.connectionId === binding.connectionId)) {
+    if (!connections.some((c) => c.connectionId === binding.connectionId)) {
       throw new Error(`Connection "${binding.connectionId}" not found`);
     }
 
@@ -151,9 +151,12 @@ export class SonarQubeConfigService {
     console.log('[SonarQube Config] Project binding:', JSON.stringify(binding));
 
     const connections = this.getConnections();
-    console.log('[SonarQube Config] Available connections:', connections.map(c => c.connectionId));
+    console.log(
+      '[SonarQube Config] Available connections:',
+      connections.map((c) => c.connectionId)
+    );
 
-    const connection = connections.find(c => c.connectionId === binding.connectionId);
+    const connection = connections.find((c) => c.connectionId === binding.connectionId);
     if (!connection) {
       console.log('[SonarQube Config] Connection not found for ID:', binding.connectionId);
       return null;
@@ -186,9 +189,7 @@ export class SonarQubeConfigService {
    * Check if SonarQube is enabled
    */
   isEnabled(): boolean {
-    return vscode.workspace
-      .getConfiguration('gooseSonarQube')
-      .get<boolean>('enabled', true);
+    return vscode.workspace.getConfiguration('gooseSonarQube').get<boolean>('enabled', true);
   }
 
   /**
@@ -198,4 +199,3 @@ export class SonarQubeConfigService {
     return 'sonarqube-only';
   }
 }
-

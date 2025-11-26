@@ -9,9 +9,7 @@ import { SonarQubeConfigService } from '../services/sonarqube-config-service.js'
 /**
  * Manage current workspace's SonarQube project binding
  */
-export async function manageProjectBinding(
-  context: vscode.ExtensionContext
-): Promise<void> {
+export async function manageProjectBinding(context: vscode.ExtensionContext): Promise<void> {
   const configService = new SonarQubeConfigService(context);
 
   const binding = configService.getProjectBinding();

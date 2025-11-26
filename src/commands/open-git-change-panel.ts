@@ -30,4 +30,3 @@ export async function openGitChangePanel(context: vscode.ExtensionContext): Prom
     vscode.window.showErrorMessage(`Failed to open Git Change Panel: ${errorMessage}`);
   }
 }
-

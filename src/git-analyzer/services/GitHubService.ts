@@ -31,10 +31,7 @@ export class GitHubService {
   /**
    * Get Pull Request metadata
    */
-  async getPullRequest(
-    repository: GitHubRepository,
-    prNumber: number
-  ): Promise<GitHubPullRequest> {
+  async getPullRequest(repository: GitHubRepository, prNumber: number): Promise<GitHubPullRequest> {
     try {
       const { data } = await this.octokit.pulls.get({
         owner: repository.owner,
@@ -81,7 +78,7 @@ export class GitHubService {
       const perPage = 100;
 
       // Paginate through all files (GitHub limits to 100 per page)
-      // eslint-disable-next-line no-constant-condition
+
       while (true) {
         const { data } = await this.octokit.pulls.listFiles({
           owner: repository.owner,
@@ -293,4 +290,3 @@ ${originalBody}
     }
   }
 }
-

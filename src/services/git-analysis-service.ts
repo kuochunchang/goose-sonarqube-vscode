@@ -22,8 +22,7 @@ import { SonarQubeConfigService } from './sonarqube-config-service.js';
  * Global type declaration for output channel
  */
 declare global {
-    // eslint-disable-next-line no-var
-    var gooseOutputChannel: vscode.OutputChannel | undefined;
+  var gooseOutputChannel: vscode.OutputChannel | undefined;
 }
 
 /**
@@ -148,7 +147,7 @@ export class GitAnalysisService {
       if (!this.orchestrator?.isSonarQubeAvailable()) {
         throw new Error(
           'SonarQube is not available. ' +
-          'Please configure SonarQube connection first using "Goose: Add SonarQube Connection" command.'
+            'Please configure SonarQube connection first using "Goose: Add SonarQube Connection" command.'
         );
       }
 
@@ -170,18 +169,27 @@ export class GitAnalysisService {
             // Get changed files for SonarQube analysis
             const changedFilePaths = gitChanges.files.map((f: GitFileChange) => f.path);
 
-            console.log(`[Git Analysis] Found ${changedFilePaths.length} changed files for SonarQube analysis`);
+            console.log(
+              `[Git Analysis] Found ${changedFilePaths.length} changed files for SonarQube analysis`
+            );
 
             // Log to output channel as well
             const workingDirOutputChannel = global.gooseOutputChannel;
             if (workingDirOutputChannel) {
-              workingDirOutputChannel.appendLine(`[SonarQube] Found ${changedFilePaths.length} changed files`);
+              workingDirOutputChannel.appendLine(
+                `[SonarQube] Found ${changedFilePaths.length} changed files`
+              );
             }
 
             if (changedFilePaths.length > 0) {
-              console.log(`[Git Analysis] Changed files:`, changedFilePaths.slice(0, 5).join(', ') + (changedFilePaths.length > 5 ? '...' : ''));
+              console.log(
+                `[Git Analysis] Changed files:`,
+                changedFilePaths.slice(0, 5).join(', ') + (changedFilePaths.length > 5 ? '...' : '')
+              );
               if (workingDirOutputChannel) {
-                workingDirOutputChannel.appendLine(`[SonarQube] Changed files: ${changedFilePaths.slice(0, 5).join(', ')}${changedFilePaths.length > 5 ? ` ... and ${changedFilePaths.length - 5} more` : ''}`);
+                workingDirOutputChannel.appendLine(
+                  `[SonarQube] Changed files: ${changedFilePaths.slice(0, 5).join(', ')}${changedFilePaths.length > 5 ? ` ... and ${changedFilePaths.length - 5} more` : ''}`
+                );
               }
               // Execute SonarQube scan
               progress?.('Verifying SonarQube connection...', 52);
@@ -202,9 +210,13 @@ export class GitAnalysisService {
               // Wait for SonarQube server to complete analysis
               progress?.('Waiting for SonarQube to process results...', 60);
               if (scanResult.taskId) {
-                console.log(`[Git Analysis] Waiting for SonarQube task ${scanResult.taskId} to complete...`);
+                console.log(
+                  `[Git Analysis] Waiting for SonarQube task ${scanResult.taskId} to complete...`
+                );
                 if (workingDirOutputChannel) {
-                  workingDirOutputChannel.appendLine(`[SonarQube] Waiting for analysis task ${scanResult.taskId} to complete...`);
+                  workingDirOutputChannel.appendLine(
+                    `[SonarQube] Waiting for analysis task ${scanResult.taskId} to complete...`
+                  );
                 }
                 await sqService.waitForAnalysis(scanResult.taskId, 300000); // 5 minutes timeout
                 console.log(`[Git Analysis] SonarQube analysis completed`);
@@ -212,8 +224,10 @@ export class GitAnalysisService {
                   workingDirOutputChannel.appendLine(`[SonarQube] Analysis completed`);
                 }
               } else {
-                console.warn('[Git Analysis] No taskId returned from SonarQube scan, waiting 5s as fallback');
-                await new Promise(resolve => setTimeout(resolve, 5000));
+                console.warn(
+                  '[Git Analysis] No taskId returned from SonarQube scan, waiting 5s as fallback'
+                );
+                await new Promise((resolve) => setTimeout(resolve, 5000));
               }
 
               // Get analysis results for changed files
@@ -226,11 +240,17 @@ export class GitAnalysisService {
               // Log results
               if (workingDirOutputChannel) {
                 const totalIssues = sonarQubeResult?.issues?.length || 0;
-                workingDirOutputChannel.appendLine(`[SonarQube] Found ${totalIssues} issue(s) in changed files`);
+                workingDirOutputChannel.appendLine(
+                  `[SonarQube] Found ${totalIssues} issue(s) in changed files`
+                );
                 if (totalIssues === 0) {
-                  workingDirOutputChannel.appendLine(`[SonarQube] No issues found. This could mean:`);
+                  workingDirOutputChannel.appendLine(
+                    `[SonarQube] No issues found. This could mean:`
+                  );
                   workingDirOutputChannel.appendLine(`  - Your code has no issues (great!)`);
-                  workingDirOutputChannel.appendLine(`  - SonarQube rules are not configured for these file types`);
+                  workingDirOutputChannel.appendLine(
+                    `  - SonarQube rules are not configured for these file types`
+                  );
                   workingDirOutputChannel.appendLine(`  - The scan needs more time to process`);
                 }
               }
@@ -257,12 +277,12 @@ export class GitAnalysisService {
       progress?.('Preparing analysis results...', 80);
 
       // Create file analyses from git changes
-      const initialFileAnalyses = gitChanges.files.map(f => ({
+      const initialFileAnalyses = gitChanges.files.map((f) => ({
         file: f.path,
         changeType: 'unknown' as const,
         issues: [],
         summary: 'File changed',
-        linesChanged: (f.linesAdded || 0) + (f.linesDeleted || 0)
+        linesChanged: (f.linesAdded || 0) + (f.linesDeleted || 0),
       }));
 
       const aiAnalysisResult = {
@@ -286,11 +306,7 @@ export class GitAnalysisService {
         duration: 0,
       };
 
-      const mergedResult = this.mergeService.merge(
-        aiAnalysisResult,
-        sonarQubeResult,
-        baseResult
-      );
+      const mergedResult = this.mergeService.merge(aiAnalysisResult, sonarQubeResult, baseResult);
 
       progress?.('Analysis complete!', 100);
 
@@ -320,7 +336,7 @@ export class GitAnalysisService {
       if (!this.orchestrator?.isSonarQubeAvailable()) {
         throw new Error(
           'SonarQube is not available. ' +
-          'Please configure SonarQube connection first using "Goose: Add SonarQube Connection" command.'
+            'Please configure SonarQube connection first using "Goose: Add SonarQube Connection" command.'
         );
       }
 
@@ -329,12 +345,13 @@ export class GitAnalysisService {
       // Get git changes for branch comparison
       const { GitService } = await import('../git-analyzer/index.js');
       const gitService = new GitService(config.workingDirectory);
-      console.log(`[Git Analysis] Comparing branches: ${config.sourceBranch} -> ${config.targetBranch}`);
-      const gitChanges = await gitService.compareBranches(
-        config.targetBranch,
-        config.sourceBranch
+      console.log(
+        `[Git Analysis] Comparing branches: ${config.sourceBranch} -> ${config.targetBranch}`
       );
-      console.log(`[Git Analysis] Branch comparison found ${gitChanges.files.length} changed files`);
+      const gitChanges = await gitService.compareBranches(config.targetBranch, config.sourceBranch);
+      console.log(
+        `[Git Analysis] Branch comparison found ${gitChanges.files.length} changed files`
+      );
 
       // Perform SonarQube analysis
       let sonarQubeResult = undefined;
@@ -349,11 +366,16 @@ export class GitAnalysisService {
             // Log to output channel as well
             const branchComparisonOutputChannel = global.gooseOutputChannel;
             if (branchComparisonOutputChannel) {
-              branchComparisonOutputChannel.appendLine(`[SonarQube] Branch comparison: ${changedFilePaths.length} changed files`);
+              branchComparisonOutputChannel.appendLine(
+                `[SonarQube] Branch comparison: ${changedFilePaths.length} changed files`
+              );
             }
 
             if (changedFilePaths.length > 0) {
-              console.log(`[Git Analysis] Changed files:`, changedFilePaths.slice(0, 5).join(', ') + (changedFilePaths.length > 5 ? '...' : ''));
+              console.log(
+                `[Git Analysis] Changed files:`,
+                changedFilePaths.slice(0, 5).join(', ') + (changedFilePaths.length > 5 ? '...' : '')
+              );
               // Execute SonarQube scan
               progress?.('Verifying SonarQube connection...', 52);
               const connectionTest = await sqService.testConnection();
@@ -373,9 +395,13 @@ export class GitAnalysisService {
               // Wait for SonarQube server to complete analysis
               progress?.('Waiting for SonarQube to process results...', 60);
               if (scanResult.taskId) {
-                console.log(`[Git Analysis] Waiting for SonarQube task ${scanResult.taskId} to complete...`);
+                console.log(
+                  `[Git Analysis] Waiting for SonarQube task ${scanResult.taskId} to complete...`
+                );
                 if (branchComparisonOutputChannel) {
-                  branchComparisonOutputChannel.appendLine(`[SonarQube] Waiting for analysis task ${scanResult.taskId} to complete...`);
+                  branchComparisonOutputChannel.appendLine(
+                    `[SonarQube] Waiting for analysis task ${scanResult.taskId} to complete...`
+                  );
                 }
                 await sqService.waitForAnalysis(scanResult.taskId, 300000); // 5 minutes timeout
                 console.log(`[Git Analysis] SonarQube analysis completed`);
@@ -383,8 +409,10 @@ export class GitAnalysisService {
                   branchComparisonOutputChannel.appendLine(`[SonarQube] Analysis completed`);
                 }
               } else {
-                console.warn('[Git Analysis] No taskId returned from SonarQube scan, waiting 5s as fallback');
-                await new Promise(resolve => setTimeout(resolve, 5000));
+                console.warn(
+                  '[Git Analysis] No taskId returned from SonarQube scan, waiting 5s as fallback'
+                );
+                await new Promise((resolve) => setTimeout(resolve, 5000));
               }
 
               // Get analysis results for changed files
@@ -397,12 +425,20 @@ export class GitAnalysisService {
               // Log results
               if (branchComparisonOutputChannel) {
                 const totalIssues = sonarQubeResult?.issues?.length || 0;
-                branchComparisonOutputChannel.appendLine(`[SonarQube] Found ${totalIssues} issue(s) in changed files`);
+                branchComparisonOutputChannel.appendLine(
+                  `[SonarQube] Found ${totalIssues} issue(s) in changed files`
+                );
                 if (totalIssues === 0) {
-                  branchComparisonOutputChannel.appendLine(`[SonarQube] No issues found. This could mean:`);
+                  branchComparisonOutputChannel.appendLine(
+                    `[SonarQube] No issues found. This could mean:`
+                  );
                   branchComparisonOutputChannel.appendLine(`  - Your code has no issues (great!)`);
-                  branchComparisonOutputChannel.appendLine(`  - SonarQube rules are not configured for these file types`);
-                  branchComparisonOutputChannel.appendLine(`  - The scan needs more time to process`);
+                  branchComparisonOutputChannel.appendLine(
+                    `  - SonarQube rules are not configured for these file types`
+                  );
+                  branchComparisonOutputChannel.appendLine(
+                    `  - The scan needs more time to process`
+                  );
                 }
               }
             } else {
@@ -418,7 +454,9 @@ export class GitAnalysisService {
 
           const branchComparisonOutputChannel = (global as any).gooseOutputChannel;
           if (branchComparisonOutputChannel) {
-            branchComparisonOutputChannel.appendLine(`[SonarQube] Analysis failed: ${errorMessage}`);
+            branchComparisonOutputChannel.appendLine(
+              `[SonarQube] Analysis failed: ${errorMessage}`
+            );
           }
 
           throw new Error(`SonarQube analysis failed: ${errorMessage}`);
@@ -428,12 +466,12 @@ export class GitAnalysisService {
       progress?.('Preparing analysis results...', 80);
 
       // Create file analyses from git changes
-      const initialFileAnalyses = gitChanges.files.map(f => ({
+      const initialFileAnalyses = gitChanges.files.map((f) => ({
         file: f.path,
         changeType: 'unknown' as const,
         issues: [],
         summary: 'File changed',
-        linesChanged: (f.linesAdded || 0) + (f.linesDeleted || 0)
+        linesChanged: (f.linesAdded || 0) + (f.linesDeleted || 0),
       }));
 
       const aiAnalysisResult = {
@@ -457,11 +495,7 @@ export class GitAnalysisService {
         duration: 0,
       };
 
-      const mergedResult = this.mergeService.merge(
-        aiAnalysisResult,
-        sonarQubeResult,
-        baseResult
-      );
+      const mergedResult = this.mergeService.merge(aiAnalysisResult, sonarQubeResult, baseResult);
 
       progress?.('Analysis complete!', 100);
 
@@ -530,7 +564,9 @@ export class GitAnalysisService {
   /**
    * Get GitHub repository information from git remote
    */
-  async getGitHubRepository(workingDirectory: string): Promise<{ owner: string; repo: string } | null> {
+  async getGitHubRepository(
+    workingDirectory: string
+  ): Promise<{ owner: string; repo: string } | null> {
     try {
       const { GitService } = await import('../git-analyzer/index.js');
       const gitService = new GitService(workingDirectory);
@@ -538,7 +574,10 @@ export class GitAnalysisService {
       // Get remote URL
       const { execSync } = await import('node:child_process');
       const gitRoot = await gitService.getGitRoot();
-      const remoteUrl = execSync('git remote get-url origin', { cwd: gitRoot, encoding: 'utf-8' }).trim();
+      const remoteUrl = execSync('git remote get-url origin', {
+        cwd: gitRoot,
+        encoding: 'utf-8',
+      }).trim();
 
       // Parse GitHub URL (supports both HTTPS and SSH formats)
       // HTTPS: https://github.com/owner/repo.git
@@ -589,7 +628,7 @@ export class GitAnalysisService {
       if (!this.orchestrator?.isSonarQubeAvailable()) {
         throw new Error(
           'SonarQube is not available. ' +
-          'Please configure SonarQube connection first using "Goose: Add SonarQube Connection" command.'
+            'Please configure SonarQube connection first using "Goose: Add SonarQube Connection" command.'
         );
       }
 
@@ -597,10 +636,7 @@ export class GitAnalysisService {
 
       // Fetch all PR files list
       const githubService = new GitHubService({ token: config.githubToken });
-      const prFiles = await githubService.getPullRequestFiles(
-        config.repository,
-        config.prNumber
-      );
+      const prFiles = await githubService.getPullRequestFiles(config.repository, config.prNumber);
 
       console.log(`[PR Analysis] Found ${prFiles.length} files in PR #${config.prNumber}`);
 
@@ -618,12 +654,16 @@ export class GitAnalysisService {
             const gitService = new GitService(config.workingDirectory);
             const gitRoot = await gitService.getGitRoot();
 
-            const changedFilePaths = prFiles.map(f => f.filename);
-            console.log(`[PR Analysis] Running SonarQube on ${changedFilePaths.length} changed files`);
+            const changedFilePaths = prFiles.map((f) => f.filename);
+            console.log(
+              `[PR Analysis] Running SonarQube on ${changedFilePaths.length} changed files`
+            );
 
             const prOutputChannel = global.gooseOutputChannel;
             if (prOutputChannel) {
-              prOutputChannel.appendLine(`[SonarQube] PR #${config.prNumber}: ${changedFilePaths.length} changed files`);
+              prOutputChannel.appendLine(
+                `[SonarQube] PR #${config.prNumber}: ${changedFilePaths.length} changed files`
+              );
             }
 
             if (changedFilePaths.length > 0) {
@@ -646,9 +686,13 @@ export class GitAnalysisService {
               // Wait for SonarQube server to complete analysis
               progress?.('Waiting for SonarQube to process results...', 70);
               if (scanResult.taskId) {
-                console.log(`[PR Analysis] Waiting for SonarQube task ${scanResult.taskId} to complete...`);
+                console.log(
+                  `[PR Analysis] Waiting for SonarQube task ${scanResult.taskId} to complete...`
+                );
                 if (prOutputChannel) {
-                  prOutputChannel.appendLine(`[SonarQube] Waiting for analysis task ${scanResult.taskId} to complete...`);
+                  prOutputChannel.appendLine(
+                    `[SonarQube] Waiting for analysis task ${scanResult.taskId} to complete...`
+                  );
                 }
                 await sqService.waitForAnalysis(scanResult.taskId, 300000); // 5 minutes timeout
                 console.log(`[PR Analysis] SonarQube analysis completed`);
@@ -656,8 +700,10 @@ export class GitAnalysisService {
                   prOutputChannel.appendLine(`[SonarQube] Analysis completed`);
                 }
               } else {
-                console.warn('[PR Analysis] No taskId returned from SonarQube scan, waiting 5s as fallback');
-                await new Promise(resolve => setTimeout(resolve, 5000));
+                console.warn(
+                  '[PR Analysis] No taskId returned from SonarQube scan, waiting 5s as fallback'
+                );
+                await new Promise((resolve) => setTimeout(resolve, 5000));
               }
 
               // Get analysis results for changed files
@@ -674,7 +720,9 @@ export class GitAnalysisService {
                 if (totalIssues === 0) {
                   prOutputChannel.appendLine(`[SonarQube] No issues found. This could mean:`);
                   prOutputChannel.appendLine(`  - Your code has no issues (great!)`);
-                  prOutputChannel.appendLine(`  - SonarQube rules are not configured for these file types`);
+                  prOutputChannel.appendLine(
+                    `  - SonarQube rules are not configured for these file types`
+                  );
                   prOutputChannel.appendLine(`  - The scan needs more time to process`);
                 }
               }
@@ -717,7 +765,7 @@ export class GitAnalysisService {
       }
 
       // Build file analyses for ALL PR files, not just those with issues
-      const fileAnalyses = prFiles.map(prFile => {
+      const fileAnalyses = prFiles.map((prFile) => {
         const issues = fileIssuesMap.get(prFile.filename) || [];
         // Map Git status to change type
         let changeType: 'feature' | 'bugfix' | 'refactor' | 'unknown' = 'unknown';
@@ -728,15 +776,15 @@ export class GitAnalysisService {
         return {
           file: prFile.filename,
           changeType,
-          summary: issues.length > 0
-            ? `${issues.length} issue(s) found`
-            : 'No issues found',
+          summary: issues.length > 0 ? `${issues.length} issue(s) found` : 'No issues found',
           issues,
           linesChanged: prFile.changes,
         };
       });
 
-      console.log(`[PR Analysis] Created ${fileAnalyses.length} file analyses with ${fileIssuesMap.size} files having issues`);
+      console.log(
+        `[PR Analysis] Created ${fileAnalyses.length} file analyses with ${fileIssuesMap.size} files having issues`
+      );
 
       // Convert PR analysis result to MergedAnalysisResult format
       const mergedResult: MergedAnalysisResult = {
@@ -768,7 +816,6 @@ export class GitAnalysisService {
     }
   }
 
-
   /**
    * Get SonarQube results for changed files only
    */
@@ -780,9 +827,7 @@ export class GitAnalysisService {
     // This is intentional as we need more granular control over the API requests
 
     // Build component keys for SonarQube API (format: projectKey:filePath)
-    const componentKeys = changedFilePaths.map(
-      (filePath) => `${sqConfig.projectKey}:${filePath}`
-    );
+    const componentKeys = changedFilePaths.map((filePath) => `${sqConfig.projectKey}:${filePath}`);
 
     // Fetch issues for changed files only
     const url = new URL(`${sqConfig.serverUrl}/api/issues/search`);
@@ -800,7 +845,9 @@ export class GitAnalysisService {
     });
 
     if (!response.ok) {
-      throw new Error(`Failed to fetch SonarQube issues: ${response.status} ${response.statusText}`);
+      throw new Error(
+        `Failed to fetch SonarQube issues: ${response.status} ${response.statusText}`
+      );
     }
 
     const data = (await response.json()) as { issues: any[] };

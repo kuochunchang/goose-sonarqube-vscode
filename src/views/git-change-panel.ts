@@ -167,7 +167,7 @@ export class GitChangePanel {
     this._panel.webview.postMessage({
       command: 'updateProgress',
       message,
-      percentage
+      percentage,
     });
   }
 
@@ -437,7 +437,14 @@ export class GitChangePanel {
    * Get header HTML
    */
   private _getHeaderHtml(_result: MergedAnalysisResult): string {
-    const { changeSource, sourceBranch, targetBranch, pullRequestNumber, pullRequestTitle, repository } = this._data;
+    const {
+      changeSource,
+      sourceBranch,
+      targetBranch,
+      pullRequestNumber,
+      pullRequestTitle,
+      repository,
+    } = this._data;
     let subtitle = '';
 
     if (changeSource === 'working-directory') {
@@ -1039,4 +1046,3 @@ export class GitChangePanel {
     return text.replace(/[&<>"']/g, (m) => map[m]);
   }
 }
-

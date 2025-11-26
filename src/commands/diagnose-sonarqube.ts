@@ -88,11 +88,15 @@ export async function diagnoseSonarQube(context: vscode.ExtensionContext): Promi
         }
       } else {
         outputChannel.appendLine('   ℹ No changed files in working directory');
-        outputChannel.appendLine('   → Make some changes to files or switch to branch comparison mode');
+        outputChannel.appendLine(
+          '   → Make some changes to files or switch to branch comparison mode'
+        );
       }
       outputChannel.appendLine('');
     } catch (error) {
-      outputChannel.appendLine(`   ✗ Git error: ${error instanceof Error ? error.message : String(error)}`);
+      outputChannel.appendLine(
+        `   ✗ Git error: ${error instanceof Error ? error.message : String(error)}`
+      );
       outputChannel.appendLine('');
     }
 
@@ -116,7 +120,7 @@ export async function diagnoseSonarQube(context: vscode.ExtensionContext): Promi
     // 6. Fetch SonarQube issues
     outputChannel.appendLine('6. Fetching SonarQube analysis results...');
     outputChannel.appendLine('   (Waiting 2 seconds for server processing...)');
-    await new Promise(resolve => setTimeout(resolve, 2000));
+    await new Promise((resolve) => setTimeout(resolve, 2000));
 
     const analysisResult = await sqService.getAnalysisResult(config.projectKey);
 
@@ -134,16 +138,26 @@ export async function diagnoseSonarQube(context: vscode.ExtensionContext): Promi
 
     outputChannel.appendLine('   Issues by type:');
     outputChannel.appendLine(`     - BUG: ${analysisResult.issuesByType.BUG || 0}`);
-    outputChannel.appendLine(`     - VULNERABILITY: ${analysisResult.issuesByType.VULNERABILITY || 0}`);
+    outputChannel.appendLine(
+      `     - VULNERABILITY: ${analysisResult.issuesByType.VULNERABILITY || 0}`
+    );
     outputChannel.appendLine(`     - CODE_SMELL: ${analysisResult.issuesByType.CODE_SMELL || 0}`);
-    outputChannel.appendLine(`     - SECURITY_HOTSPOT: ${analysisResult.issuesByType.SECURITY_HOTSPOT || 0}`);
+    outputChannel.appendLine(
+      `     - SECURITY_HOTSPOT: ${analysisResult.issuesByType.SECURITY_HOTSPOT || 0}`
+    );
     outputChannel.appendLine('');
 
     outputChannel.appendLine('   Metrics:');
     outputChannel.appendLine(`     - Lines of code: ${analysisResult.metrics.linesOfCode}`);
-    outputChannel.appendLine(`     - Coverage: ${(analysisResult.metrics.coverage ?? 0).toFixed(1)}%`);
-    outputChannel.appendLine(`     - Technical debt ratio: ${(analysisResult.metrics.technicalDebtRatio ?? 0).toFixed(1)}%`);
-    outputChannel.appendLine(`     - Duplicated lines: ${(analysisResult.metrics.duplicatedLinesDensity ?? 0).toFixed(1)}%`);
+    outputChannel.appendLine(
+      `     - Coverage: ${(analysisResult.metrics.coverage ?? 0).toFixed(1)}%`
+    );
+    outputChannel.appendLine(
+      `     - Technical debt ratio: ${(analysisResult.metrics.technicalDebtRatio ?? 0).toFixed(1)}%`
+    );
+    outputChannel.appendLine(
+      `     - Duplicated lines: ${(analysisResult.metrics.duplicatedLinesDensity ?? 0).toFixed(1)}%`
+    );
     outputChannel.appendLine('');
 
     outputChannel.appendLine('   Quality Gate:');
@@ -179,12 +193,16 @@ export async function diagnoseSonarQube(context: vscode.ExtensionContext): Promi
     outputChannel.appendLine('✓ Analysis results retrieved: OK');
     outputChannel.appendLine('');
     outputChannel.appendLine('If you see 0 issues in the Git change analysis:');
-    outputChannel.appendLine('  1. Make sure you have uncommitted changes in your working directory');
+    outputChannel.appendLine(
+      '  1. Make sure you have uncommitted changes in your working directory'
+    );
     outputChannel.appendLine('  2. Or use "Goose: Analyze Branch Comparison" instead');
     outputChannel.appendLine('  3. SonarQube only reports issues for changed files');
     outputChannel.appendLine('');
 
-    vscode.window.showInformationMessage('SonarQube diagnostic completed. Check output channel for details.');
+    vscode.window.showInformationMessage(
+      'SonarQube diagnostic completed. Check output channel for details.'
+    );
   } catch (error) {
     const errorMsg = error instanceof Error ? error.message : String(error);
     outputChannel.appendLine('');
@@ -197,7 +215,9 @@ export async function diagnoseSonarQube(context: vscode.ExtensionContext): Promi
     if (errorMsg.includes('403')) {
       outputChannel.appendLine('');
       outputChannel.appendLine('🔍 403 Forbidden Error Analysis:');
-      outputChannel.appendLine('   This error indicates a permissions issue, not an authentication issue.');
+      outputChannel.appendLine(
+        '   This error indicates a permissions issue, not an authentication issue.'
+      );
       outputChannel.appendLine('');
       outputChannel.appendLine('   Common causes:');
       outputChannel.appendLine('   1. Token type is "Analysis Token" instead of "User Token"');
@@ -206,7 +226,9 @@ export async function diagnoseSonarQube(context: vscode.ExtensionContext): Promi
       outputChannel.appendLine('');
       outputChannel.appendLine('   Quick fixes:');
       outputChannel.appendLine('   ✓ Verify token type: My Account → Security → Tokens');
-      outputChannel.appendLine('   ✓ Check project permissions: Administration → Projects → project-goose → Permissions');
+      outputChannel.appendLine(
+        '   ✓ Check project permissions: Administration → Projects → project-goose → Permissions'
+      );
       outputChannel.appendLine('   ✓ Grant "Browse" permission to your user');
       outputChannel.appendLine('');
       outputChannel.appendLine('   📖 Detailed guide: docs/SONARQUBE_403_TROUBLESHOOTING.md');
@@ -216,7 +238,9 @@ export async function diagnoseSonarQube(context: vscode.ExtensionContext): Promi
       outputChannel.appendLine('   This error indicates the token is invalid or expired.');
       outputChannel.appendLine('');
       outputChannel.appendLine('   Quick fixes:');
-      outputChannel.appendLine('   ✓ Regenerate token in SonarQube: My Account → Security → Tokens');
+      outputChannel.appendLine(
+        '   ✓ Regenerate token in SonarQube: My Account → Security → Tokens'
+      );
       outputChannel.appendLine('   ✓ Update connection: Run "Goose: Add SonarQube Connection"');
       outputChannel.appendLine('   ✓ Ensure token is copied correctly (no extra spaces)');
     } else if (errorMsg.includes('404')) {

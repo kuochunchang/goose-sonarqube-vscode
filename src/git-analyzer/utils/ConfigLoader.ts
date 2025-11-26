@@ -224,7 +224,10 @@ export class ConfigLoader {
     if (/^-?\d+\.\d+$/.test(value)) return parseFloat(value);
 
     // String (remove quotes if present)
-    if ((value.startsWith('"') && value.endsWith('"')) || (value.startsWith("'") && value.endsWith("'"))) {
+    if (
+      (value.startsWith('"') && value.endsWith('"')) ||
+      (value.startsWith("'") && value.endsWith("'"))
+    ) {
       return value.slice(1, -1);
     }
 

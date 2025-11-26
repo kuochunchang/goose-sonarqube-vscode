@@ -1,11 +1,11 @@
 /**
  * SonarQube 快速測試
- * 
+ *
  * 這是一個簡化版的測試腳本，用於快速測試 SonarQube 連線和基本功能
- * 
+ *
  * 使用方式：
  * npx tsx packages/git-analyzer/src/__tests__/sonarqube-quick-test.ts <token> [projectKey]
- * 
+ *
  * 範例：
  * npx tsx packages/git-analyzer/src/__tests__/sonarqube-quick-test.ts squ_abc123def456 my-project
  */
@@ -111,10 +111,10 @@ async function quickTest() {
 
     // 測試 2: 嘗試獲取專案資訊（如果專案已存在）
     console.log('⏳ 測試 2: 檢查專案是否存在...');
-    
+
     try {
       const analysisResult = await service.getAnalysisResult(projectKey);
-      
+
       console.log('✅ 專案已存在，成功獲取分析結果');
       console.log(`   總問題數: ${analysisResult.issues.length}`);
       console.log(`   品質閘門: ${analysisResult.qualityGate.status}`);
@@ -123,7 +123,6 @@ async function quickTest() {
       console.log(`   程式碼異味: ${analysisResult.metrics.codeSmells}`);
       console.log('');
       console.log(`📊 查看報告: ${serverUrl}/dashboard?id=${projectKey}`);
-      
     } catch (error) {
       console.log('ℹ️  專案尚未掃描或不存在');
       console.log('');
@@ -132,7 +131,9 @@ async function quickTest() {
       console.log('  npm run test:sonarqube');
       console.log('');
       console.log('  或手動執行掃描：');
-      console.log(`  sonar-scanner -Dsonar.projectKey=${projectKey} -Dsonar.host.url=${serverUrl} -Dsonar.token=${token.substring(0, 10)}...`);
+      console.log(
+        `  sonar-scanner -Dsonar.projectKey=${projectKey} -Dsonar.host.url=${serverUrl} -Dsonar.token=${token.substring(0, 10)}...`
+      );
     }
 
     console.log('');
@@ -142,17 +143,16 @@ async function quickTest() {
     console.log('');
     console.log('SonarQube 連線正常，可以開始使用！');
     console.log('');
-
   } catch (error) {
     console.log('');
     console.error('❌ 測試失敗:', error instanceof Error ? error.message : String(error));
-    
+
     if (error instanceof Error && error.stack) {
       console.log('');
       console.log('詳細錯誤：');
       console.error(error.stack);
     }
-    
+
     process.exit(1);
   }
 }
@@ -162,4 +162,3 @@ quickTest().catch((error) => {
   console.error('\n執行錯誤:', error);
   process.exit(1);
 });
-

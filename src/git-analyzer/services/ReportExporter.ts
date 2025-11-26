@@ -1,6 +1,6 @@
 /**
  * ReportExporter - Export analysis reports in various formats
- * 
+ *
  * Supports:
  * - Markdown format (human-readable)
  * - HTML format (with charts and styling)
@@ -57,11 +57,7 @@ export class ReportExporter {
   /**
    * Export report in specified format
    */
-  export(
-    result: MergedAnalysisResult,
-    format: ExportFormat,
-    options: ExportOptions = {}
-  ): string {
+  export(result: MergedAnalysisResult, format: ExportFormat, options: ExportOptions = {}): string {
     const opts = { ...DEFAULT_OPTIONS, ...options };
 
     switch (format) {
@@ -245,8 +241,7 @@ export class ReportExporter {
       return lines.join('\n');
     }
 
-    const issuesToShow =
-      options.maxIssues > 0 ? allIssues.slice(0, options.maxIssues) : allIssues;
+    const issuesToShow = options.maxIssues > 0 ? allIssues.slice(0, options.maxIssues) : allIssues;
 
     if (options.groupByFile) {
       lines.push(this.generateMarkdownIssuesByFile(result, issuesToShow));
@@ -268,10 +263,7 @@ export class ReportExporter {
   /**
    * Generate issues grouped by file
    */
-  private generateMarkdownIssuesByFile(
-    result: MergedAnalysisResult,
-    issues: CodeIssue[]
-  ): string {
+  private generateMarkdownIssuesByFile(result: MergedAnalysisResult, issues: CodeIssue[]): string {
     const lines: string[] = [];
     const issuesByFile = new Map<string, CodeIssue[]>();
 
@@ -561,4 +553,3 @@ export class ReportExporter {
     return text.replace(/[&<>"']/g, (m) => map[m]);
   }
 }
-

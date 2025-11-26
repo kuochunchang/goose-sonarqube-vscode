@@ -1,6 +1,6 @@
 /**
  * MergeService - Merges SonarQube and AI analysis results
- * 
+ *
  * Responsibilities:
  * - Issue deduplication (SonarQube + AI)
  * - Severity mapping (SonarQube severity → unified severity)
@@ -105,11 +105,7 @@ export class MergeService {
     const fileAnalyses = this.groupIssuesByFile(sortedIssues, aiResult.fileAnalyses);
 
     // Calculate overall impact
-    const impactAnalysis = this.calculateImpact(
-      sortedIssues,
-      aiResult.impactAnalysis,
-      sonarResult
-    );
+    const impactAnalysis = this.calculateImpact(sortedIssues, aiResult.impactAnalysis, sonarResult);
 
     // Build merged result
     const mergedResult: MergedAnalysisResult = {
@@ -473,10 +469,7 @@ export class MergeService {
   /**
    * Group issues by file and merge with existing file analyses
    */
-  private groupIssuesByFile(
-    issues: CodeIssue[],
-    existingAnalyses: FileAnalysis[]
-  ): FileAnalysis[] {
+  private groupIssuesByFile(issues: CodeIssue[], existingAnalyses: FileAnalysis[]): FileAnalysis[] {
     // Create a map of existing analyses
     const analysisMap = new Map<string, FileAnalysis>();
     for (const analysis of existingAnalyses) {
@@ -651,4 +644,3 @@ export class MergeService {
     };
   }
 }
-

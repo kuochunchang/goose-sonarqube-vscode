@@ -9,9 +9,7 @@ import { SonarQubeConfigService } from '../services/sonarqube-config-service.js'
 /**
  * Manage SonarQube connections
  */
-export async function manageSonarQubeConnections(
-  context: vscode.ExtensionContext
-): Promise<void> {
+export async function manageSonarQubeConnections(context: vscode.ExtensionContext): Promise<void> {
   const configService = new SonarQubeConfigService(context);
 
   while (true) {

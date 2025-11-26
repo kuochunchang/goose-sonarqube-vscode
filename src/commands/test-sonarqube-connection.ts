@@ -9,9 +9,7 @@ import { SonarQubeConfigService } from '../services/sonarqube-config-service.js'
 /**
  * Test SonarQube connection for the current project binding
  */
-export async function testSonarQubeConnection(
-  context: vscode.ExtensionContext
-): Promise<void> {
+export async function testSonarQubeConnection(context: vscode.ExtensionContext): Promise<void> {
   const configService = new SonarQubeConfigService(context);
 
   try {
@@ -80,16 +78,15 @@ export async function testConnectionById(
   if (testResult.success) {
     vscode.window.showInformationMessage(
       `✓ Connection successful!\n` +
-      `  SonarQube: ${testResult.version}\n` +
-      `  Response time: ${testResult.responseTime}ms` +
-      (projectKey ? `\n  Project: ${projectKey}` : '')
+        `  SonarQube: ${testResult.version}\n` +
+        `  Response time: ${testResult.responseTime}ms` +
+        (projectKey ? `\n  Project: ${projectKey}` : '')
     );
   } else {
     vscode.window.showErrorMessage(
       `✗ Connection failed: ${testResult.error}\n` +
-      `  Server: ${connection.serverUrl}` +
-      (projectKey ? `\n  Project: ${projectKey}` : '')
+        `  Server: ${connection.serverUrl}` +
+        (projectKey ? `\n  Project: ${projectKey}` : '')
     );
   }
 }
-

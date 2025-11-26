@@ -165,15 +165,8 @@ export class DiffParser {
    * @param options - Formatting options
    * @returns Formatted diff string
    */
-  formatDiffForAnalysis(
-    parsedChange: ParsedFileChange,
-    options: DiffFormatOptions = {}
-  ): string {
-    const {
-      includeContext = true,
-      maxContextLines = 3,
-      includeMetadata = true,
-    } = options;
+  formatDiffForAnalysis(parsedChange: ParsedFileChange, options: DiffFormatOptions = {}): string {
+    const { includeContext = true, maxContextLines = 3, includeMetadata = true } = options;
 
     const parts: string[] = [];
 
@@ -279,9 +272,7 @@ export class DiffParser {
    * @param parsedChanges - Array of parsed file changes
    * @returns Map of extension to file changes
    */
-  groupByExtension(
-    parsedChanges: ParsedFileChange[]
-  ): Map<string, ParsedFileChange[]> {
+  groupByExtension(parsedChanges: ParsedFileChange[]): Map<string, ParsedFileChange[]> {
     const groups = new Map<string, ParsedFileChange[]>();
 
     for (const change of parsedChanges) {
@@ -322,10 +313,7 @@ export class DiffParser {
    * @param extensions - Extensions to include
    * @returns Filtered array
    */
-  filterByExtension(
-    parsedChanges: ParsedFileChange[],
-    extensions: string[]
-  ): ParsedFileChange[] {
+  filterByExtension(parsedChanges: ParsedFileChange[], extensions: string[]): ParsedFileChange[] {
     const normalizedExtensions = extensions.map((ext) => ext.toLowerCase());
     return parsedChanges.filter((change) =>
       normalizedExtensions.includes(change.extension.toLowerCase())

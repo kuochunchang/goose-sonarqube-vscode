@@ -118,7 +118,10 @@ export class SonarQubeService {
   async executeScan(options: ScannerExecutionOptions): Promise<ScannerExecutionResult> {
     console.log('[SonarQubeService] executeScan called. Current mode:', this.mode);
     if (!this.isAvailable()) {
-      console.error('[SonarQubeService] executeScan failed: Server not available. Mode:', this.mode);
+      console.error(
+        '[SonarQubeService] executeScan failed: Server not available. Mode:',
+        this.mode
+      );
       return {
         success: false,
         error: 'SonarQube server is not available',
@@ -137,7 +140,9 @@ export class SonarQubeService {
           'sonar.projectName': this.config.projectName || this.config.projectKey,
           'sonar.projectVersion': this.config.projectVersion || '1.0',
           'sonar.sources': this.config.sources || '.',
-          'sonar.exclusions': this.config.exclusions || 'node_modules/**,dist/**,build/**,coverage/**,.scannerwork/**,.git/**',
+          'sonar.exclusions':
+            this.config.exclusions ||
+            'node_modules/**,dist/**,build/**,coverage/**,.scannerwork/**,.git/**',
           'sonar.sourceEncoding': this.config.sourceEncoding || 'UTF-8',
           'sonar.projectBaseDir': options.workingDirectory,
           'sonar.login': this.config.token || '', // Explicitly pass token as sonar.login
@@ -175,40 +180,37 @@ export class SonarQubeService {
 
         try {
           logMessage('[SonarQube] Invoking scanner...');
-          scanner(
-            scannerConfig,
-            (error?: unknown) => {
-              clearTimeout(timeoutId);
-              const executionTime = this.getElapsedTime(startTime);
+          scanner(scannerConfig, (error?: unknown) => {
+            clearTimeout(timeoutId);
+            const executionTime = this.getElapsedTime(startTime);
 
-              if (error) {
-                // Error callback
-                const errorMsg = `[SonarQube] Scanner failed: ${error instanceof Error ? error.message : String(error)}`;
-                console.error(errorMsg);
-                logMessage(errorMsg);
-                resolve({
-                  success: false,
-                  error: error instanceof Error ? error.message : String(error),
-                  executionTime,
-                });
-              } else {
-                // Success callback - read taskId and dashboardUrl from report-task.txt
-                const successMsg = `[SonarQube] Scanner completed successfully in ${executionTime}ms`;
-                console.log(successMsg);
-                logMessage(successMsg);
+            if (error) {
+              // Error callback
+              const errorMsg = `[SonarQube] Scanner failed: ${error instanceof Error ? error.message : String(error)}`;
+              console.error(errorMsg);
+              logMessage(errorMsg);
+              resolve({
+                success: false,
+                error: error instanceof Error ? error.message : String(error),
+                executionTime,
+              });
+            } else {
+              // Success callback - read taskId and dashboardUrl from report-task.txt
+              const successMsg = `[SonarQube] Scanner completed successfully in ${executionTime}ms`;
+              console.log(successMsg);
+              logMessage(successMsg);
 
-                // Parse report-task.txt to get taskId and dashboardUrl
-                const { taskId, dashboardUrl } = this.parseReportTask(options.workingDirectory);
+              // Parse report-task.txt to get taskId and dashboardUrl
+              const { taskId, dashboardUrl } = this.parseReportTask(options.workingDirectory);
 
-                resolve({
-                  success: true,
-                  executionTime,
-                  taskId,
-                  dashboardUrl,
-                });
-              }
+              resolve({
+                success: true,
+                executionTime,
+                taskId,
+                dashboardUrl,
+              });
             }
-          );
+          });
         } catch (err) {
           clearTimeout(timeoutId);
           reject(err);
@@ -443,9 +445,7 @@ export class SonarQubeService {
    * @param issues Array of issues
    * @returns Count by severity
    */
-  private aggregateIssuesBySeverity(
-    issues: SonarQubeIssue[],
-  ): Record<SonarQubeSeverity, number> {
+  private aggregateIssuesBySeverity(issues: SonarQubeIssue[]): Record<SonarQubeSeverity, number> {
     const result: Record<SonarQubeSeverity, number> = {
       [SonarQubeSeverity.BLOCKER]: 0,
       [SonarQubeSeverity.CRITICAL]: 0,

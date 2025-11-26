@@ -4,14 +4,15 @@
  */
 
 import * as vscode from 'vscode';
-import { SonarQubeConfigService, type SonarQubeConnection } from '../services/sonarqube-config-service.js';
+import {
+  SonarQubeConfigService,
+  type SonarQubeConnection,
+} from '../services/sonarqube-config-service.js';
 
 /**
  * Add a new SonarQube connection
  */
-export async function addSonarQubeConnection(
-  context: vscode.ExtensionContext
-): Promise<void> {
+export async function addSonarQubeConnection(context: vscode.ExtensionContext): Promise<void> {
   const configService = new SonarQubeConfigService(context);
 
   try {
@@ -24,7 +25,7 @@ export async function addSonarQubeConnection(
           return 'Connection ID is required';
         }
         const existing = configService.getConnections();
-        if (existing.some(c => c.connectionId === value.trim())) {
+        if (existing.some((c) => c.connectionId === value.trim())) {
           return `Connection ID "${value.trim()}" already exists`;
         }
         return null;
@@ -130,7 +131,7 @@ async function testConnection(
 ): Promise<void> {
   const configService = new SonarQubeConfigService(context);
   const connections = configService.getConnections();
-  const connection = connections.find(c => c.connectionId === connectionId);
+  const connection = connections.find((c) => c.connectionId === connectionId);
 
   if (!connection) {
     vscode.window.showErrorMessage(`Connection "${connectionId}" not found`);
@@ -165,13 +166,10 @@ async function testConnection(
         `✓ Connection successful! SonarQube ${testResult.version} (${testResult.responseTime}ms)`
       );
     } else {
-      vscode.window.showErrorMessage(
-        `✗ Connection failed: ${testResult.error}`
-      );
+      vscode.window.showErrorMessage(`✗ Connection failed: ${testResult.error}`);
     }
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
     vscode.window.showErrorMessage(`Connection test failed: ${errorMessage}`);
   }
 }
-
