@@ -133,6 +133,24 @@ export async function showGitAnalysisMenu(
   } as QuickMenuItem);
 
   menuItems.push({
+    label: "$(plug) Manage SonarQube Connections",
+    description: "View, edit, test, or delete SonarQube connections",
+    detail: "Interactive connection management (no need to edit settings.json)",
+    action: async () => {
+      await vscode.commands.executeCommand("gooseSonarQube.manageConnections");
+    },
+  });
+
+  menuItems.push({
+    label: "$(project) Manage Project Binding",
+    description: "View, edit, or remove current SonarQube project binding",
+    detail: "Quickly switch or update the bound SonarQube project",
+    action: async () => {
+      await vscode.commands.executeCommand("gooseSonarQube.manageProjectBinding");
+    },
+  });
+
+  menuItems.push({
     label: "$(gear) Configure Analysis",
     description: "Open settings",
     detail: "Configure AI provider, SonarQube, and analysis options",

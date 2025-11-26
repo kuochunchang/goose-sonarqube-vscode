@@ -324,6 +324,9 @@ describe("GitAnalysisService", () => {
         isSonarQubeAvailable: vi.fn().mockReturnValue(false),
       };
       (service as any).orchestrator = mockOrchestrator;
+      // Prevent re-initialization from changing the orchestrator so that the
+      // method still behaves as if SonarQube is unavailable.
+      (service as any).initializeSonarQube = vi.fn().mockResolvedValue(undefined);
 
       const config: GitAnalysisConfig = {
         analysisTypes: ["quality"],
@@ -445,6 +448,9 @@ describe("GitAnalysisService", () => {
         isSonarQubeAvailable: vi.fn().mockReturnValue(false),
       };
       (service as any).orchestrator = mockOrchestrator;
+      // Prevent re-initialization from changing the orchestrator so that the
+      // method still behaves as if SonarQube is unavailable.
+      (service as any).initializeSonarQube = vi.fn().mockResolvedValue(undefined);
 
       const config: BranchComparisonConfig = {
         analysisTypes: ["quality"],

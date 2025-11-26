@@ -129,14 +129,16 @@ export class GitAnalysisService {
     try {
       progress?.("Detecting analysis mode...", 5);
 
-      // Ensure orchestrator is initialized
-      if (!this.orchestrator) {
+      // Ensure orchestrator is initialized or re-initialized if SonarQube was
+      // previously unavailable. This allows the user to configure SonarQube
+      // after activation without having to reload the window.
+      if (!this.orchestrator || !this.orchestrator.isSonarQubeAvailable()) {
         await this.initializeSonarQube();
       }
 
       progress?.("Checking working directory changes...", 10);
 
-      // Check if SonarQube is available
+      // Check if SonarQube is available after (re)initialization
       if (!this.orchestrator?.isSonarQubeAvailable()) {
         throw new Error(
           "SonarQube is not available. " +
@@ -320,12 +322,13 @@ export class GitAnalysisService {
     try {
       progress?.("Initializing analysis...", 5);
 
-      // Ensure orchestrator is initialized
-      if (!this.orchestrator) {
+      // Ensure orchestrator is initialized or re-initialized if SonarQube was
+      // previously unavailable.
+      if (!this.orchestrator || !this.orchestrator.isSonarQubeAvailable()) {
         await this.initializeSonarQube();
       }
 
-      // Check if SonarQube is available
+      // Check if SonarQube is available after (re)initialization
       if (!this.orchestrator?.isSonarQubeAvailable()) {
         throw new Error(
           "SonarQube is not available. " +

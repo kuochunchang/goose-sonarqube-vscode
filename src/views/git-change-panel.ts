@@ -224,7 +224,7 @@ export class GitChangePanel {
   }
 
   /**
-   * Open file at specific line
+   * Open file at specific line in a new tab beside the current editor
    */
   private async _openFile(filePath: string, line: number): Promise<void> {
     try {
@@ -236,17 +236,51 @@ export class GitChangePanel {
       }
 
       const uri = vscode.Uri.file(resolvedPath);
-      const document = await vscode.workspace.openTextDocument(uri);
-      const editor = await vscode.window.showTextDocument(document);
 
-      // Jump to line
-      if (line > 0) {
-        const position = new vscode.Position(line - 1, 0);
-        editor.selection = new vscode.Selection(position, position);
-        editor.revealRange(
-          new vscode.Range(position, position),
-          vscode.TextEditorRevealType.InCenter
-        );
+      // Determine which column to open the file in
+      // Always open beside the current editor (or in column 2 if no active editor)
+      // This ensures the analysis panel remains visible
+      const activeEditor = vscode.window.activeTextEditor;
+      const targetColumn =
+        activeEditor && activeEditor.viewColumn ? vscode.ViewColumn.Beside : vscode.ViewColumn.Two;
+
+      const targetLine = Math.max(0, (line ?? 1) - 1);
+      const position = new vscode.Position(targetLine, 0);
+      const range = new vscode.Range(position, position);
+
+      // Try to open using showTextDocument first (supports viewColumn)
+      try {
+        const document = await vscode.workspace.openTextDocument(uri);
+        const editor = await vscode.window.showTextDocument(document, {
+          viewColumn: targetColumn,
+          preview: false, // Open as a permanent tab, not preview
+          selection: range,
+          preserveFocus: false, // Focus the new editor so user can see it
+        });
+
+        // Ensure the line is visible and centered
+        editor.revealRange(range, vscode.TextEditorRevealType.InCenter);
+      } catch (openError) {
+        // If showTextDocument fails (e.g., 50MB limit), try vscode.open as fallback
+        const errorMessage = openError instanceof Error ? openError.message : String(openError);
+        if (errorMessage.includes("50MB") || errorMessage.includes("cannot be synchronized")) {
+          // Try vscode.open as fallback (doesn't require loading file into extension host)
+          try {
+            await vscode.commands.executeCommand("vscode.open", uri, {
+              preview: false,
+              selection: range,
+            });
+            vscode.window.showInformationMessage(
+              `File opened. Note: Large files may not open in the preferred column.`
+            );
+          } catch {
+            vscode.window.showWarningMessage(
+              `File is too large to open automatically. Please manually open ${filePath} and navigate to line ${line}.`
+            );
+          }
+        } else {
+          throw openError;
+        }
       }
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);

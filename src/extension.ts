@@ -11,6 +11,8 @@ import { analyzeWorkingDirectory } from "./commands/analyze-working-directory.js
 import { bindSonarQubeProject } from "./commands/bind-sonarqube-project.js";
 import { diagnoseSonarQube } from "./commands/diagnose-sonarqube.js";
 import { showGitAnalysisMenu } from "./commands/git-analysis-menu.js";
+import { manageSonarQubeConnections } from "./commands/manage-connections.js";
+import { manageSonarQubeProjectBinding } from "./commands/manage-project-binding.js";
 import { openGitChangePanel } from "./commands/open-git-change-panel.js";
 import { testSonarQubeConnection } from "./commands/test-sonarqube-connection.js";
 import { GitAnalysisService } from "./services/git-analysis-service.js";
@@ -83,6 +85,16 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
 
   const analyzeProjectSonarQubeCmd = registerAnalyzeProjectSonarQubeCommand(context);
 
+  const manageConnectionsCmd = vscode.commands.registerCommand(
+    "gooseSonarQube.manageConnections",
+    () => manageSonarQubeConnections(context)
+  );
+
+  const manageProjectBindingCmd = vscode.commands.registerCommand(
+    "gooseSonarQube.manageProjectBinding",
+    () => manageSonarQubeProjectBinding(context)
+  );
+
   context.subscriptions.push(
     analyzeWorkingDirectoryCmd,
     analyzeBranchCmd,
@@ -93,7 +105,9 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     bindSonarQubeProjectCmd,
     testSonarQubeConnectionCmd,
     diagnoseSonarQubeCmd,
-    analyzeProjectSonarQubeCmd
+    analyzeProjectSonarQubeCmd,
+    manageConnectionsCmd,
+    manageProjectBindingCmd
   );
 
   vscode.window.showInformationMessage("Goose SonarQube is ready! 🔍");
