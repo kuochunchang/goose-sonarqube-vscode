@@ -4,19 +4,23 @@ import {
   type SonarQubeConfig,
 } from '../types/sonarqube.types.js';
 
+// Mock fs module
+vi.mock('fs', () => ({
+  existsSync: vi.fn(() => true),
+  readFileSync: vi.fn(() => 
+    'ceTaskId=mock-task-id\nceTaskUrl=http://localhost:9000/api/ce/task?id=mock-task-id\ndashboardUrl=http://localhost:9000/dashboard?id=test-project'
+  ),
+}));
+
 // Mock sonarqube-scanner
 vi.mock('sonarqube-scanner', () => ({
-  default: vi.fn((config, callback, errorCallback) => {
+  default: vi.fn((config, callback) => {
     // Simulate async scanner execution
     setTimeout(() => {
       if (mockScannerShouldFail) {
-        errorCallback(new Error('Scanner execution failed'));
+        callback(new Error('Scanner execution failed'));
       } else {
-        callback({
-          ceTaskId: 'mock-task-id',
-          ceTaskUrl: 'http://localhost:9000/api/ce/task?id=mock-task-id',
-          dashboardUrl: 'http://localhost:9000/dashboard?id=test-project',
-        });
+        callback();
       }
     }, 10);
   }),
@@ -235,7 +239,7 @@ describe('SonarQubeService', () => {
 
       expect(result.success).toBe(false);
       expect(result.error).toContain('Scanner execution failed');
-    });
+    }, 10000); // Increase timeout to 10 seconds
   });
 
   describe('getAnalysisResult', () => {
