@@ -65,16 +65,28 @@ jobs:
           retention-days: 30
 
       - name: Publish to VS Code Marketplace
-        if: (github.event_name == 'release' || github.event_name == 'push') && secrets.VSCE_PAT
+        if: github.event_name == 'release' || github.event_name == 'push'
+        env:
+          VSCE_PAT: ${{ secrets.VSCE_PAT }}
         run: |
+          if [ -z "$VSCE_PAT" ]; then
+            echo "VSCE_PAT secret not set, skipping VS Code Marketplace publish"
+            exit 0
+          fi
           VSIX_FILE=$(ls *.vsix | head -n 1)
-          npx @vscode/vsce publish "$VSIX_FILE" -p ${{ secrets.VSCE_PAT }}
+          npx @vscode/vsce publish "$VSIX_FILE" -p "$VSCE_PAT"
 
       - name: Publish to Open VSX Registry
-        if: (github.event_name == 'release' || github.event_name == 'push') && secrets.OPEN_VSX_TOKEN
+        if: github.event_name == 'release' || github.event_name == 'push'
+        env:
+          OPEN_VSX_TOKEN: ${{ secrets.OPEN_VSX_TOKEN }}
         run: |
+          if [ -z "$OPEN_VSX_TOKEN" ]; then
+            echo "OPEN_VSX_TOKEN secret not set, skipping Open VSX Registry publish"
+            exit 0
+          fi
           VSIX_FILE=$(ls *.vsix | head -n 1)
-          npx -y ovsx publish "$VSIX_FILE" -p ${{ secrets.OPEN_VSX_TOKEN }}
+          npx -y ovsx publish "$VSIX_FILE" -p "$OPEN_VSX_TOKEN"
         continue-on-error: true
 
       - name: Create GitHub Release (for tag push)
