@@ -612,7 +612,13 @@ export class GitAnalysisService {
     // Fetch rule details in parallel (limit concurrency to 5)
     const ruleDetailsMap = new Map<
       string,
-      { name: string; htmlDesc: string; htmlNote?: string } | null
+      {
+        name: string;
+        htmlDesc: string;
+        htmlNote?: string;
+        whyIsThisAnIssue?: string;
+        howToFixIt?: string;
+      } | null
     >();
     const ruleKeysArray = Array.from(ruleKeys);
 
