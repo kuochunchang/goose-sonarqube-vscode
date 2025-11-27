@@ -6,19 +6,25 @@ tsconfig.json
 tslint.json
 .eslintrc.json
 eslint.config.js
-esbuild.js
+esbuild.mjs
 .prettierrc
 .prettierignore
 .gitignore
 .git/**
 .github/**
 .claude/**
+AGENT.md
+CLAUDE.md
+DEVELOPMENT.md
 
 # Test files
 **/__tests__/**
 **/*.test.ts
 **/*.spec.ts
 vitest.config.ts
+
+# Coverage reports - MUST exclude
+coverage/**
 
 # Documentation
 *.md
@@ -28,13 +34,22 @@ vitest.config.ts
 # Node modules
 node_modules/**
 
-# Build artifacts
-*.map
+# Build artifacts - exclude all maps and type definitions
+**/*.map
+**/*.d.ts
+**/*.d.ts.map
 *.log
 
 # Docker and other configs
 docker/**
 
-# Keep compiled JavaScript and resources
+# Exclude all dist subdirectories (tsc output)
+dist/commands/**
+dist/git-analyzer/**
+dist/services/**
+dist/utils/**
+dist/views/**
+
+# Keep only the bundled extension and resources
 !dist/extension.js
 !resources/**

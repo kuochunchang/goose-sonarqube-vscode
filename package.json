@@ -2,8 +2,7 @@
     "name": "goose-sonarqube-vscode",
     "displayName": "Goose SonarQube",
     "description": "SonarQube integration and Git change analysis for VS Code",
-    "version": "0.2.1",
-    "type": "module",
+    "version": "0.2.2",
     "publisher": "kuochunchang",
     "icon": "resources/icons/extension-icon.jpg",
     "engines": {
@@ -196,9 +195,9 @@
     },
     "scripts": {
         "build": "npm run compile",
-        "compile": "node esbuild.js",
-        "compile:production": "node esbuild.js --production",
-        "watch": "node esbuild.js --watch",
+        "compile": "node esbuild.mjs",
+        "compile:production": "node esbuild.mjs --production",
+        "watch": "node esbuild.mjs --watch",
         "build:tsc": "tsc",
         "package": "npm run compile:production && vsce package",
         "test": "vitest run",
