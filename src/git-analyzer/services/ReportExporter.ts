@@ -34,12 +34,24 @@ export interface ExportOptions {
   groupBySeverity?: boolean;
   /** Maximum issues to show (0 = all) */
   maxIssues?: number;
+  /** Panel header information */
+  panelHeader?: {
+    title?: string;
+    subtitle?: string;
+    changeSource?: string;
+    sourceBranch?: string;
+    targetBranch?: string;
+    pullRequestNumber?: number;
+    pullRequestTitle?: string;
+    repository?: { owner: string; repo: string };
+  };
 }
 
 /**
  * Default export options
  */
-const DEFAULT_OPTIONS: Required<ExportOptions> = {
+const DEFAULT_OPTIONS: Required<Omit<ExportOptions, "panelHeader">> &
+  Pick<ExportOptions, "panelHeader"> = {
   includeSummary: true,
   includeIssues: true,
   includeStatistics: true,
@@ -58,7 +70,11 @@ export class ReportExporter {
    * Export report in specified format
    */
   export(result: MergedAnalysisResult, format: ExportFormat, options: ExportOptions = {}): string {
-    const opts = { ...DEFAULT_OPTIONS, ...options };
+    const opts: Required<Omit<ExportOptions, "panelHeader">> & Pick<ExportOptions, "panelHeader"> =
+      {
+        ...DEFAULT_OPTIONS,
+        ...options,
+      };
 
     switch (format) {
       case "markdown":
@@ -75,11 +91,21 @@ export class ReportExporter {
   /**
    * Export as Markdown
    */
-  private exportMarkdown(result: MergedAnalysisResult, options: Required<ExportOptions>): string {
+  private exportMarkdown(
+    result: MergedAnalysisResult,
+    options: Required<Omit<ExportOptions, "panelHeader">> & Pick<ExportOptions, "panelHeader">
+  ): string {
     const sections: string[] = [];
 
-    // Title
-    sections.push("# Code Review Analysis Report\n");
+    // Title - use panel header if available
+    const title = options.panelHeader?.title || "Code Review Analysis Report";
+    sections.push(`# ${title}\n`);
+
+    // Subtitle - use panel header subtitle if available
+    if (options.panelHeader?.subtitle) {
+      sections.push(`**${options.panelHeader.subtitle}**\n`);
+    }
+
     sections.push(`**Generated**: ${new Date(result.timestamp).toLocaleString()}\n`);
 
     if (result.duration) {
@@ -119,8 +145,10 @@ export class ReportExporter {
    */
   private generateMarkdownSummary(result: MergedAnalysisResult): string {
     const lines: string[] = ["\n## Summary\n"];
+    const allIssues = result.fileAnalyses.flatMap((f) => f.issues);
 
     lines.push(`**Change Type**: ${result.changeType}`);
+    lines.push(`**Total Issues**: ${allIssues.length}`);
     lines.push(`**Files Changed**: ${result.summary.filesChanged}`);
     lines.push(`**Lines Added**: +${result.summary.insertions}`);
     lines.push(`**Lines Deleted**: -${result.summary.deletions}`);
@@ -231,7 +259,7 @@ export class ReportExporter {
    */
   private generateMarkdownIssues(
     result: MergedAnalysisResult,
-    options: Required<ExportOptions>
+    options: Required<Omit<ExportOptions, "panelHeader">> & Pick<ExportOptions, "panelHeader">
   ): string {
     const lines: string[] = ["\n## Issues\n"];
     const allIssues = result.fileAnalyses.flatMap((f) => f.issues);
@@ -335,12 +363,56 @@ export class ReportExporter {
       text += `  - **Rule**: ${issue.rule}\n`;
     }
 
+    if (issue.issueKey) {
+      text += `  - **Issue Key**: ${issue.issueKey}\n`;
+    }
+
+    if (issue.status) {
+      text += `  - **Status**: ${issue.status}\n`;
+    }
+
     if (issue.effort) {
       text += `  - **Effort**: ${issue.effort} min\n`;
     }
 
+    if (issue.debt) {
+      text += `  - **Technical Debt**: ${issue.debt}\n`;
+    }
+
+    if (issue.assignee) {
+      text += `  - **Assigned to**: ${issue.assignee}\n`;
+    }
+
+    if (issue.creationDate) {
+      text += `  - **Created**: ${this.formatDate(issue.creationDate)}\n`;
+    }
+
+    if (issue.updateDate) {
+      text += `  - **Updated**: ${this.formatDate(issue.updateDate)}\n`;
+    }
+
+    if (issue.tags && issue.tags.length > 0) {
+      text += `  - **Tags**: ${issue.tags.join(", ")}\n`;
+    }
+
+    if (issue.description) {
+      text += `\n  **Description**:\n  ${issue.description}\n`;
+    }
+
+    if (issue.whyIsThisAnIssue) {
+      text += `\n  **Why is this an issue?**\n  ${this.stripHtml(issue.whyIsThisAnIssue)}\n`;
+    }
+
+    if (issue.howToFixIt) {
+      text += `\n  **How to fix it**\n  ${this.stripHtml(issue.howToFixIt)}\n`;
+    }
+
     if (issue.suggestion) {
-      text += `  - **Suggestion**: ${issue.suggestion}\n`;
+      text += `\n  **Suggestion**:\n  \`\`\`\n  ${issue.suggestion}\n  \`\`\`\n`;
+    }
+
+    if (issue.issueUrl) {
+      text += `\n  **View in SonarQube**: ${issue.issueUrl}\n`;
     }
 
     return text;
@@ -349,7 +421,10 @@ export class ReportExporter {
   /**
    * Export as HTML
    */
-  private exportHTML(result: MergedAnalysisResult, options: Required<ExportOptions>): string {
+  private exportHTML(
+    result: MergedAnalysisResult,
+    options: Required<Omit<ExportOptions, "panelHeader">> & Pick<ExportOptions, "panelHeader">
+  ): string {
     const markdown = this.exportMarkdown(result, options);
 
     // Simple HTML wrapper (in production, use a proper markdown-to-html library)
@@ -411,7 +486,10 @@ export class ReportExporter {
   /**
    * Export as JSON
    */
-  private exportJSON(result: MergedAnalysisResult, options: Required<ExportOptions>): string {
+  private exportJSON(
+    result: MergedAnalysisResult,
+    options: Required<Omit<ExportOptions, "panelHeader">> & Pick<ExportOptions, "panelHeader">
+  ): string {
     const allIssues = result.fileAnalyses.flatMap((f) => f.issues);
 
     const output: any = {
@@ -421,6 +499,20 @@ export class ReportExporter {
         changeType: result.changeType,
       },
     };
+
+    // Include panel header information if available
+    if (options.panelHeader) {
+      output.panelHeader = {
+        title: options.panelHeader.title || "Code Review Analysis Report",
+        subtitle: options.panelHeader.subtitle,
+        changeSource: options.panelHeader.changeSource,
+        sourceBranch: options.panelHeader.sourceBranch,
+        targetBranch: options.panelHeader.targetBranch,
+        pullRequestNumber: options.panelHeader.pullRequestNumber,
+        pullRequestTitle: options.panelHeader.pullRequestTitle,
+        repository: options.panelHeader.repository,
+      };
+    }
 
     if (options.includeSummary) {
       output.summary = result.summary;
@@ -551,5 +643,42 @@ export class ReportExporter {
       "'": "&#039;",
     };
     return text.replace(/[&<>"']/g, (m) => map[m]);
+  }
+
+  /**
+   * Strip HTML tags and convert to plain text
+   */
+  private stripHtml(html: string): string {
+    // Remove HTML tags
+    let text = html.replace(/<[^>]*>/g, "");
+    // Decode HTML entities
+    text = text
+      .replace(/&amp;/g, "&")
+      .replace(/&lt;/g, "<")
+      .replace(/&gt;/g, ">")
+      .replace(/&quot;/g, '"')
+      .replace(/&#039;/g, "'")
+      .replace(/&nbsp;/g, " ");
+    // Clean up whitespace
+    text = text.replace(/\s+/g, " ").trim();
+    return text;
+  }
+
+  /**
+   * Format date for display
+   */
+  private formatDate(isoDate: string): string {
+    try {
+      const date = new Date(isoDate);
+      return date.toLocaleDateString("en-US", {
+        year: "numeric",
+        month: "short",
+        day: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
+      });
+    } catch {
+      return isoDate;
+    }
   }
 }

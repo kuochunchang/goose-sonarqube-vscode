@@ -60,13 +60,26 @@ export interface MergeConfig {
    * @default false
    */
   includeRawResults?: boolean;
+
+  /**
+   * SonarQube server URL for building issue links
+   */
+  sonarQubeServerUrl?: string;
+
+  /**
+   * SonarQube project key for building issue links
+   */
+  sonarQubeProjectKey?: string;
 }
 
 /**
  * MergeService - Combines SonarQube and AI analysis results
  */
 export class MergeService {
-  private readonly config: Required<MergeConfig>;
+  private readonly config: Required<
+    Omit<MergeConfig, "sonarQubeServerUrl" | "sonarQubeProjectKey">
+  > &
+    Pick<MergeConfig, "sonarQubeServerUrl" | "sonarQubeProjectKey">;
 
   constructor(config: MergeConfig = {}) {
     this.config = {
@@ -74,6 +87,8 @@ export class MergeService {
       fuzzyMatchThreshold: config.fuzzyMatchThreshold ?? 0.8,
       preferSonarQube: config.preferSonarQube ?? true,
       includeRawResults: config.includeRawResults ?? false,
+      sonarQubeServerUrl: config.sonarQubeServerUrl,
+      sonarQubeProjectKey: config.sonarQubeProjectKey,
     };
   }
 
@@ -135,6 +150,12 @@ export class MergeService {
    * Convert a single SonarQube issue to CodeIssue
    */
   private convertSonarQubeIssue(issue: SonarQubeIssue): CodeIssue {
+    // Build issue URL if we have the necessary configuration
+    let issueUrl: string | undefined;
+    if (this.config.sonarQubeServerUrl && this.config.sonarQubeProjectKey && issue.key) {
+      issueUrl = `${this.config.sonarQubeServerUrl}/project/issues?id=${this.config.sonarQubeProjectKey}&open=${issue.key}`;
+    }
+
     return {
       source: "sonarqube",
       severity: this.mapSonarQubeSeverity(issue.severity),
@@ -145,6 +166,14 @@ export class MergeService {
       description: this.buildSonarDescription(issue),
       rule: issue.rule,
       effort: issue.effort ? this.parseEffort(issue.effort) : undefined,
+      status: issue.status,
+      tags: issue.tags,
+      creationDate: issue.creationDate,
+      updateDate: issue.updateDate,
+      debt: issue.debt,
+      assignee: issue.assignee,
+      issueKey: issue.key,
+      issueUrl,
     };
   }
 

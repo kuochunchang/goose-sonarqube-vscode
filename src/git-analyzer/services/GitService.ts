@@ -2,7 +2,7 @@
  * GitService - Git operations wrapper using simple-git
  */
 
-import simpleGit, { LogResult, SimpleGit, StatusResult } from "simple-git";
+import { simpleGit, type LogResult, type SimpleGit, type StatusResult } from "simple-git";
 import type {
   BranchComparisonChanges,
   DiffHunk,

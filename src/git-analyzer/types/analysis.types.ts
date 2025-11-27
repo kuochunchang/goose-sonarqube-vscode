@@ -70,6 +70,28 @@ export interface CodeIssue {
   effort?: number;
   /** Suggested fix */
   suggestion?: string;
+  /** Issue status (for SonarQube) */
+  status?: string;
+  /** Tags (for SonarQube) */
+  tags?: string[];
+  /** Creation date */
+  creationDate?: string;
+  /** Update date */
+  updateDate?: string;
+  /** Technical debt */
+  debt?: string;
+  /** Assignee */
+  assignee?: string;
+  /** Issue key (for SonarQube) */
+  issueKey?: string;
+  /** Issue URL (link to SonarQube web interface) */
+  issueUrl?: string;
+  /** Rule URL (link to SonarQube rule page) */
+  ruleUrl?: string;
+  /** Rule details - "Why is this an issue?" (HTML content) */
+  whyIsThisAnIssue?: string;
+  /** How to fix it (HTML content) */
+  howToFixIt?: string;
 }
 
 /**

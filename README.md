@@ -4,6 +4,17 @@ SonarQube integration and Git change analysis for VS Code.
 
 This extension helps you review changes in your Git repository and surface SonarQube/SonarCloud issues directly inside VS Code.
 
+### Difference from Official SonarQube Extension
+
+This extension focuses on Git changes, while the [official SonarQube for IDE](https://marketplace.visualstudio.com/items?itemName=SonarSource.sonarlint-vscode) focuses on real-time file analysis:
+
+| | This Extension | Official Extension |
+|---|---|---|
+| **Scope** | Changed files only (Git diff) | All open files |
+| **Timing** | On-demand (manual command) | Real-time (as you type) |
+| **Context** | Branch comparison, PR analysis | Current file editing |
+| **Output** | Webview report with export | Problems panel |
+
 ### Features
 
 - **Git Change Analysis**: Analyze working directory changes, branch comparisons, and pull requests
@@ -14,32 +25,7 @@ This extension helps you review changes in your Git repository and surface Sonar
 
 ---
 
-### Installation
 
-#### Install from VSIX file
-
-You can install this extension from a pre-built `.vsix` file (for example: `goose-sonarqube-vscode-0.2.0.vsix`):
-
-1. **Download the VSIX file**
-
-2. **Install via Command Palette**:
-   - Open VS Code
-   - Press `Ctrl+Shift+P` (or `Cmd+Shift+P` on macOS) to open the Command Palette
-   - Type **"Install from VSIX..."** and select it
-   - Browse and select the `.vsix` file
-   - Click **"Install"**
-
-3. **Install via command line**:
-
-   ```bash
-   code --install-extension goose-sonarqube-vscode-0.2.0.vsix
-   ```
-
-4. **Reload VS Code** after installation to activate the extension.
-
-> 💡 If you want to build the VSIX from source or contribute to development, see **`DEVELOPMENT.md`**.
-
----
 
 ### Usage
 
@@ -144,6 +130,16 @@ You can configure this extension from **VS Code Settings** (`Preferences → Set
 
 - `gooseSonarQube.enabled`  
   Enable or disable SonarQube integration globally.
+
+---
+
+### Development
+
+For development setup and contribution guidelines, see [DEVELOPMENT.md](./DEVELOPMENT.md).
+
+### Release
+
+This extension uses GitHub Actions for automated publishing to VS Code Marketplace. See [Release Guide](./.github/RELEASE.md) for details.
 
 ---
 

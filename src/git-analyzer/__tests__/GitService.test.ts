@@ -4,7 +4,7 @@ import type { SimpleGit, StatusResult, LogResult } from "simple-git";
 
 // Mock simple-git
 vi.mock("simple-git", () => ({
-  default: vi.fn(() => mockGit),
+  simpleGit: vi.fn(() => mockGit),
 }));
 
 // Mock Git instance

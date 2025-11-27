@@ -1,4 +1,4 @@
-import { SonarQubeConfig } from "../types/sonarqube.types";
+import { SonarQubeConfig } from "../types/sonarqube.types.js";
 
 // Debug script for manual SonarQube scanning
 // eslint-disable-next-line @typescript-eslint/no-unused-vars

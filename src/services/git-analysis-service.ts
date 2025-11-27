@@ -101,6 +101,12 @@ export class GitAnalysisService {
       const sonarQubeService = new SonarQubeService(sqConfig);
       this.orchestrator = new AnalysisOrchestrator(sonarQubeService, false);
 
+      // Recreate MergeService with SonarQube config for building issue URLs
+      (this.mergeService as any) = new MergeService({
+        sonarQubeServerUrl: sqConfig.serverUrl,
+        sonarQubeProjectKey: sqConfig.projectKey,
+      });
+
       // Detect mode (will test connection and set up graceful degradation)
       try {
         const detectionResult = await this.orchestrator.detectMode();
@@ -301,7 +307,15 @@ export class GitAnalysisService {
         duration: 0,
       };
 
-      const mergedResult = this.mergeService.merge(aiAnalysisResult, sonarQubeResult, baseResult);
+      let mergedResult = this.mergeService.merge(aiAnalysisResult, sonarQubeResult, baseResult);
+
+      // Enhance issues with rule details (Why is this an issue? / How to fix it?)
+      progress?.("Fetching rule details...", 90);
+      const sqConfigForRules = await this.sonarQubeConfigService.getSonarQubeConfig();
+      if (sqConfigForRules) {
+        const sqServiceForRules = new SonarQubeService(sqConfigForRules);
+        mergedResult = await this.enhanceIssuesWithRuleDetails(mergedResult, sqServiceForRules);
+      }
 
       progress?.("Analysis complete!", 100);
 
@@ -491,7 +505,15 @@ export class GitAnalysisService {
         duration: 0,
       };
 
-      const mergedResult = this.mergeService.merge(aiAnalysisResult, sonarQubeResult, baseResult);
+      let mergedResult = this.mergeService.merge(aiAnalysisResult, sonarQubeResult, baseResult);
+
+      // Enhance issues with rule details (Why is this an issue? / How to fix it?)
+      progress?.("Fetching rule details...", 90);
+      const sqConfigForRules = await this.sonarQubeConfigService.getSonarQubeConfig();
+      if (sqConfigForRules) {
+        const sqServiceForRules = new SonarQubeService(sqConfigForRules);
+        mergedResult = await this.enhanceIssuesWithRuleDetails(mergedResult, sqServiceForRules);
+      }
 
       progress?.("Analysis complete!", 100);
 
@@ -545,6 +567,171 @@ export class GitAnalysisService {
     const { GitService } = await import("../git-analyzer/index.js");
     const gitService = new GitService(workingDirectory);
     return gitService.getRepoRoot();
+  }
+
+  /**
+   * Enhance issues with rule details (Why is this an issue? / How to fix it?)
+   */
+  private async enhanceIssuesWithRuleDetails(
+    result: MergedAnalysisResult,
+    sqService: SonarQubeService
+  ): Promise<MergedAnalysisResult> {
+    // Collect unique rule keys from SonarQube issues
+    const ruleKeys = new Set<string>();
+    for (const fileAnalysis of result.fileAnalyses) {
+      for (const issue of fileAnalysis.issues) {
+        if (issue.source === "sonarqube" && issue.rule) {
+          ruleKeys.add(issue.rule);
+        }
+      }
+    }
+
+    if (ruleKeys.size === 0) {
+      return result;
+    }
+
+    // Test connection to ensure service is available
+    try {
+      console.log(`[Git Analysis] Testing SonarQube connection before fetching rule details...`);
+      const connectionTest = await sqService.testConnection();
+      console.log(
+        `[Git Analysis] Connection test result: ${connectionTest.success ? "SUCCESS" : "FAILED"}`
+      );
+      if (!connectionTest.success) {
+        console.warn(`[Git Analysis] Cannot fetch rule details: ${connectionTest.error}`);
+        return result;
+      }
+      console.log(`[Git Analysis] SonarQube service available: ${sqService.isAvailable()}`);
+    } catch (error) {
+      console.warn(`[Git Analysis] Cannot fetch rule details: connection test failed`, error);
+      return result;
+    }
+
+    console.log(`[Git Analysis] Fetching details for ${ruleKeys.size} unique rules...`);
+
+    // Fetch rule details in parallel (limit concurrency to 5)
+    const ruleDetailsMap = new Map<
+      string,
+      {
+        name: string;
+        htmlDesc: string;
+        htmlNote?: string;
+        whyIsThisAnIssue?: string;
+        howToFixIt?: string;
+      } | null
+    >();
+    const ruleKeysArray = Array.from(ruleKeys);
+
+    // Process in batches of 5
+    for (let i = 0; i < ruleKeysArray.length; i += 5) {
+      const batch = ruleKeysArray.slice(i, i + 5);
+      const results = await Promise.all(
+        batch.map(async (ruleKey) => {
+          const details = await sqService.getRuleDetails(ruleKey);
+          return { ruleKey, details };
+        })
+      );
+      for (const { ruleKey, details } of results) {
+        ruleDetailsMap.set(ruleKey, details);
+      }
+    }
+
+    // Update issues with rule details
+    let enhancedCount = 0;
+    for (const fileAnalysis of result.fileAnalyses) {
+      for (const issue of fileAnalysis.issues) {
+        if (issue.source === "sonarqube" && issue.rule) {
+          // Set rule URL
+          issue.ruleUrl = sqService.getRuleUrl(issue.rule);
+
+          const details = ruleDetailsMap.get(issue.rule);
+          if (details) {
+            // Use pre-parsed sections if available (SonarQube 9.x+)
+            if (details.whyIsThisAnIssue || details.howToFixIt) {
+              issue.whyIsThisAnIssue = details.whyIsThisAnIssue || details.htmlDesc || "";
+              issue.howToFixIt = details.howToFixIt || "";
+              enhancedCount++;
+              console.log(`[Git Analysis] Enhanced issue with rule ${issue.rule} (new format)`);
+            } else if (details.htmlDesc) {
+              // Fall back to parsing htmlDesc for older SonarQube versions
+              const { whyIsThisAnIssue, howToFixIt } = this.parseRuleDescription(details.htmlDesc);
+              issue.whyIsThisAnIssue = whyIsThisAnIssue;
+              issue.howToFixIt = howToFixIt;
+              enhancedCount++;
+              console.log(`[Git Analysis] Enhanced issue with rule ${issue.rule} (legacy format)`);
+            } else {
+              console.log(`[Git Analysis] Rule ${issue.rule} has no description content`);
+            }
+          } else {
+            console.log(`[Git Analysis] No details found for rule ${issue.rule}`);
+          }
+        }
+      }
+    }
+
+    console.log(`[Git Analysis] Enhanced ${enhancedCount} issues with rule details`);
+    return result;
+  }
+
+  /**
+   * Parse rule HTML description to extract sections
+   */
+  private parseRuleDescription(htmlDesc: string): {
+    whyIsThisAnIssue: string;
+    howToFixIt: string;
+  } {
+    // SonarQube rule descriptions often have sections like:
+    // <h2>Why is this an issue?</h2>
+    // <h2>How to fix it</h2>
+    // <h2>Noncompliant code example</h2>
+    // <h2>Compliant solution</h2>
+
+    let whyIsThisAnIssue = htmlDesc;
+    let howToFixIt = "";
+
+    // Try to extract "Why is this an issue?" section
+    const whyMatch = htmlDesc.match(/<h2>Why is this an issue\??<\/h2>([\s\S]*?)(?=<h2>|$)/i);
+    if (whyMatch) {
+      whyIsThisAnIssue = whyMatch[1].trim();
+    }
+
+    // Try to extract "How to fix it" or remediation section
+    const howMatch = htmlDesc.match(/<h2>How (?:to|can I) fix it\??<\/h2>([\s\S]*?)(?=<h2>|$)/i);
+    if (howMatch) {
+      howToFixIt = howMatch[1].trim();
+    }
+
+    // If no "How to fix" section, try to find code examples
+    if (!howToFixIt) {
+      // Look for compliant solution
+      const compliantMatch = htmlDesc.match(
+        /<h2>Compliant (?:solution|code(?: example)?)<\/h2>([\s\S]*?)(?=<h2>|$)/i
+      );
+      if (compliantMatch) {
+        howToFixIt = `<h3>Compliant Solution</h3>${compliantMatch[1].trim()}`;
+      }
+
+      // Also add noncompliant example if found
+      const noncompliantMatch = htmlDesc.match(
+        /<h2>Noncompliant code(?: example)?<\/h2>([\s\S]*?)(?=<h2>|$)/i
+      );
+      if (noncompliantMatch) {
+        howToFixIt = `<h3>Noncompliant Code Example</h3>${noncompliantMatch[1].trim()}${howToFixIt ? `<br/><br/>${howToFixIt}` : ""}`;
+      }
+    }
+
+    // If still no content, provide the full description as "why"
+    if (!whyIsThisAnIssue || whyIsThisAnIssue === htmlDesc) {
+      // Just use the full description
+      whyIsThisAnIssue = htmlDesc;
+    }
+
+    return {
+      whyIsThisAnIssue,
+      howToFixIt:
+        howToFixIt ||
+        "<em>No specific fix guidance available. See the rule description above.</em>",
+    };
   }
 
   /**

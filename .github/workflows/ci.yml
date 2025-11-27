@@ -66,6 +66,16 @@ jobs:
             exit 1
           fi
           echo "Build successful: dist directory exists"
+      
+      - name: Package extension
+        run: npm run package
+      
+      - name: Upload VSIX artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: vsix-package
+          path: '*.vsix'
+          retention-days: 7
 
   lint:
     name: Lint
@@ -86,9 +96,11 @@ jobs:
       
       - name: Run ESLint
         run: npm run lint
+        continue-on-error: false
       
       - name: Check Prettier formatting
         run: npm run format:check
+        continue-on-error: false
 
   type-check:
     name: Type Check
@@ -109,4 +121,3 @@ jobs:
       
       - name: Type check
         run: npx tsc --noEmit
-

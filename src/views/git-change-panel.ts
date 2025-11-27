@@ -74,10 +74,16 @@ function calculateSummaryStats(result: MergedAnalysisResult): {
  * Webview message types
  */
 interface WebviewMessage {
-  command: "openFile" | "exportReport" | "copyToClipboard" | "refresh";
+  command: "openFile" | "exportReport" | "copyToClipboard" | "refresh" | "openUrl" | "copyIssue";
   file?: string;
   line?: number;
   format?: string;
+  url?: string;
+  issueKey?: string;
+  issueRule?: string;
+  issueFile?: string;
+  issueLine?: number;
+  issueMessage?: string;
 }
 
 /**
@@ -220,6 +226,22 @@ export class GitChangePanel {
         // Refresh analysis (re-run)
         vscode.window.showInformationMessage("Refresh analysis not yet implemented");
         break;
+      case "openUrl":
+        if (message.url) {
+          await vscode.env.openExternal(vscode.Uri.parse(message.url));
+        }
+        break;
+      case "copyIssue":
+        if (message.issueFile && message.issueLine !== undefined && message.issueMessage) {
+          await this._copyIssue(
+            message.issueKey,
+            message.issueRule,
+            message.issueFile,
+            message.issueLine,
+            message.issueMessage
+          );
+        }
+        break;
     }
   }
 
@@ -312,7 +334,33 @@ export class GitChangePanel {
       // Import ReportExporter dynamically
       const { ReportExporter } = await import("../git-analyzer/index.js");
       const exporter = new ReportExporter();
-      const content = exporter.export(this._data.result, format);
+
+      // Get subtitle for panel header
+      let subtitle = "";
+      if (this._data.changeSource === "working-directory") {
+        subtitle = "Working Directory Changes";
+      } else if (this._data.changeSource === "branch-comparison") {
+        subtitle = `${this._data.sourceBranch} → ${this._data.targetBranch}`;
+      } else if (
+        this._data.changeSource === "pull-request" &&
+        this._data.pullRequestNumber &&
+        this._data.repository
+      ) {
+        subtitle = `PR #${this._data.pullRequestNumber}: ${this._data.pullRequestTitle || "Untitled"} (${this._data.repository.owner}/${this._data.repository.repo})`;
+      }
+
+      const content = exporter.export(this._data.result, format, {
+        panelHeader: {
+          title: "Git Change Analysis",
+          subtitle,
+          changeSource: this._data.changeSource,
+          sourceBranch: this._data.sourceBranch,
+          targetBranch: this._data.targetBranch,
+          pullRequestNumber: this._data.pullRequestNumber,
+          pullRequestTitle: this._data.pullRequestTitle,
+          repository: this._data.repository,
+        },
+      });
       await vscode.workspace.fs.writeFile(uri, Buffer.from(content, "utf-8"));
 
       vscode.window.showInformationMessage(`Report exported to ${uri.fsPath}`);
@@ -335,13 +383,166 @@ export class GitChangePanel {
       // Import ReportExporter dynamically
       const { ReportExporter } = await import("../git-analyzer/index.js");
       const exporter = new ReportExporter();
-      const content = exporter.export(this._data.result, format);
+
+      // Get subtitle for panel header
+      let subtitle = "";
+      if (this._data.changeSource === "working-directory") {
+        subtitle = "Working Directory Changes";
+      } else if (this._data.changeSource === "branch-comparison") {
+        subtitle = `${this._data.sourceBranch} → ${this._data.targetBranch}`;
+      } else if (
+        this._data.changeSource === "pull-request" &&
+        this._data.pullRequestNumber &&
+        this._data.repository
+      ) {
+        subtitle = `PR #${this._data.pullRequestNumber}: ${this._data.pullRequestTitle || "Untitled"} (${this._data.repository.owner}/${this._data.repository.repo})`;
+      }
+
+      const content = exporter.export(this._data.result, format, {
+        panelHeader: {
+          title: "Git Change Analysis",
+          subtitle,
+          changeSource: this._data.changeSource,
+          sourceBranch: this._data.sourceBranch,
+          targetBranch: this._data.targetBranch,
+          pullRequestNumber: this._data.pullRequestNumber,
+          pullRequestTitle: this._data.pullRequestTitle,
+          repository: this._data.repository,
+        },
+      });
 
       await vscode.env.clipboard.writeText(content);
       vscode.window.showInformationMessage(`Copied ${format.toUpperCase()} to clipboard`);
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);
       vscode.window.showErrorMessage(`Failed to copy to clipboard: ${errorMessage}`);
+    }
+  }
+
+  /**
+   * Copy issue to clipboard
+   */
+  private async _copyIssue(
+    issueKey: string | undefined,
+    issueRule: string | undefined,
+    issueFile: string,
+    issueLine: number,
+    issueMessage: string
+  ): Promise<void> {
+    if (!this._data.result) {
+      vscode.window.showWarningMessage("No analysis result available");
+      return;
+    }
+
+    try {
+      // Find the issue by file, line, and message (most reliable)
+      // Fallback to key or rule if available
+      let targetIssue: CodeIssue | undefined;
+
+      for (const fileAnalysis of this._data.result.fileAnalyses) {
+        targetIssue = fileAnalysis.issues.find((issue) => {
+          // Primary match: file, line, and message
+          if (
+            issue.file === issueFile &&
+            issue.line === issueLine &&
+            issue.message === issueMessage
+          ) {
+            return true;
+          }
+          // Fallback: match by key or rule if provided
+          if (issueKey && issue.issueKey === issueKey) {
+            return true;
+          }
+          if (issueRule && issue.rule === issueRule) {
+            return true;
+          }
+          return false;
+        });
+        if (targetIssue) {
+          break;
+        }
+      }
+
+      if (!targetIssue) {
+        vscode.window.showWarningMessage("Issue not found");
+        return;
+      }
+
+      // Format issue as readable text
+      const lines: string[] = [];
+      lines.push(`Issue: ${targetIssue.message}`);
+      lines.push(`Severity: ${targetIssue.severity.toUpperCase()}`);
+      lines.push(`Type: ${targetIssue.type}`);
+      lines.push(`File: ${targetIssue.file}`);
+      lines.push(`Line: ${targetIssue.line}`);
+
+      if (targetIssue.rule) {
+        lines.push(`Rule: ${targetIssue.rule}`);
+      }
+
+      if (targetIssue.description) {
+        lines.push(``);
+        lines.push(`Description:`);
+        lines.push(targetIssue.description);
+      }
+
+      if (targetIssue.whyIsThisAnIssue) {
+        lines.push(``);
+        lines.push(`Why is this an issue?`);
+        // Strip HTML tags for plain text
+        const plainText = targetIssue.whyIsThisAnIssue
+          .replace(/<[^>]*>/g, "")
+          .replace(/&nbsp;/g, " ")
+          .replace(/&amp;/g, "&")
+          .replace(/&lt;/g, "<")
+          .replace(/&gt;/g, ">")
+          .replace(/&quot;/g, '"')
+          .replace(/&#039;/g, "'");
+        lines.push(plainText.trim());
+      }
+
+      if (targetIssue.howToFixIt) {
+        lines.push(``);
+        lines.push(`How to fix it:`);
+        // Strip HTML tags for plain text
+        const plainText = targetIssue.howToFixIt
+          .replace(/<[^>]*>/g, "")
+          .replace(/&nbsp;/g, " ")
+          .replace(/&amp;/g, "&")
+          .replace(/&lt;/g, "<")
+          .replace(/&gt;/g, ">")
+          .replace(/&quot;/g, '"')
+          .replace(/&#039;/g, "'");
+        lines.push(plainText.trim());
+      }
+
+      if (targetIssue.suggestion) {
+        lines.push(``);
+        lines.push(`Suggested fix:`);
+        lines.push(targetIssue.suggestion);
+      }
+
+      if (targetIssue.tags && targetIssue.tags.length > 0) {
+        lines.push(``);
+        lines.push(`Tags: ${targetIssue.tags.join(", ")}`);
+      }
+
+      if (targetIssue.assignee) {
+        lines.push(``);
+        lines.push(`Assignee: ${targetIssue.assignee}`);
+      }
+
+      if (targetIssue.issueUrl) {
+        lines.push(``);
+        lines.push(`View in SonarQube: ${targetIssue.issueUrl}`);
+      }
+
+      const content = lines.join("\n");
+      await vscode.env.clipboard.writeText(content);
+      vscode.window.showInformationMessage("Issue copied to clipboard");
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      vscode.window.showErrorMessage(`Failed to copy issue: ${errorMessage}`);
     }
   }
 
@@ -366,6 +567,7 @@ export class GitChangePanel {
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Git Change Analysis</title>
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
   <style>
     ${this._getStyles()}
   </style>
@@ -396,6 +598,7 @@ export class GitChangePanel {
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Git Change Analysis</title>
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
   <style>
     ${this._getStyles()}
   </style>
@@ -403,7 +606,7 @@ export class GitChangePanel {
 <body>
   <div class="container">
     <div class="analyzing-state">
-      <h1>🔍 Git Change Analysis</h1>
+      <h1>Git Change Analysis</h1>
       <div class="progress-container">
         <div class="progress-info">
           <span id="progress-message">${progress.message}</span>
@@ -447,6 +650,7 @@ export class GitChangePanel {
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Git Change Analysis</title>
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
   <style>
     ${this._getStyles()}
   </style>
@@ -454,7 +658,7 @@ export class GitChangePanel {
 <body>
   <div class="container">
     <div class="empty-state">
-      <h1>🔍 Git Change Analysis</h1>
+      <h1><span class="material-icons">search</span> Git Change Analysis</h1>
       <p>No analysis results yet. Run an analysis to get started:</p>
       <ul>
         <li><strong>Analyze Working Directory</strong> - Review uncommitted changes</li>
@@ -491,13 +695,13 @@ export class GitChangePanel {
 
     return `
     <div class="header">
-      <h1>🔍 Git Change Analysis</h1>
+      <h1>Git Change Analysis</h1>
       <p class="subtitle">${subtitle}</p>
       <div class="actions">
-        <button onclick="copyToClipboard('markdown')">📋 Copy Markdown</button>
-        <button onclick="copyToClipboard('json')">📋 Copy JSON</button>
-        <button onclick="exportReport('markdown')">💾 Export Markdown</button>
-        <button onclick="exportReport('json')">💾 Export JSON</button>
+        <button onclick="copyToClipboard('markdown')"><span class="material-icons">content_copy</span> Copy Markdown</button>
+        <button onclick="copyToClipboard('json')"><span class="material-icons">content_copy</span> Copy JSON</button>
+        <button onclick="exportReport('markdown')"><span class="material-icons">save</span> Export Markdown</button>
+        <button onclick="exportReport('json')"><span class="material-icons">save</span> Export JSON</button>
       </div>
     </div>`;
   }
@@ -517,25 +721,6 @@ export class GitChangePanel {
       <div class="summary-card">
         <div class="summary-label">Files Changed</div>
         <div class="summary-value">${summary.totalFiles}</div>
-      </div>
-      <div class="summary-card">
-        <div class="summary-label">Quality Score</div>
-        <div class="summary-value">${summary.qualityScore}/100</div>
-      </div>
-      <div class="summary-card ${this._getRiskClass(summary.riskLevel)}">
-        <div class="summary-label">Risk Level</div>
-        <div class="summary-value">${summary.riskLevel.toUpperCase()}</div>
-      </div>
-    </div>
-
-    <div class="severity-breakdown">
-      <h3>Issues by Severity</h3>
-      <div class="severity-bars">
-        ${this._getSeverityBar("Critical", summary.bySeverity.critical || 0, "critical")}
-        ${this._getSeverityBar("High", summary.bySeverity.high || 0, "high")}
-        ${this._getSeverityBar("Medium", summary.bySeverity.medium || 0, "medium")}
-        ${this._getSeverityBar("Low", summary.bySeverity.low || 0, "low")}
-        ${this._getSeverityBar("Info", summary.bySeverity.info || 0, "info")}
       </div>
     </div>`;
   }
@@ -603,21 +788,53 @@ export class GitChangePanel {
         const issuesForFile = fileAnalysis.issues
           .map((issue: CodeIssue) => {
             return `
-          <div class="issue ${issue.severity}" data-severity="${issue.severity}">
+          <div class="issue ${issue.severity}" data-severity="${issue.severity}" data-type="${issue.type}" data-source="${issue.source}">
             <div class="issue-header">
-              <span class="severity-badge ${issue.severity}">${issue.severity.toUpperCase()}</span>
-              <span class="type-badge">${issue.type}</span>
-              <span class="source-badge">${issue.source}</span>
+              <div class="issue-badges">
+                <span class="severity-badge ${issue.severity}">${issue.severity.toUpperCase()}</span>
+                <span class="type-badge">${this._formatIssueType(issue.type)}</span>
+                <span class="source-badge">${issue.source.toUpperCase()}</span>
+                ${issue.rule ? `<span class="rule-badge"><span class="material-icons">description</span> ${issue.ruleUrl ? `<a href="${this._escapeHtml(issue.ruleUrl)}" onclick="openUrl('${this._escapeHtml(issue.ruleUrl)}'); return false;" class="rule-link">${this._escapeHtml(issue.rule)}</a>` : this._escapeHtml(issue.rule)}</span>` : ""}
+                ${issue.status ? `<span class="status-badge status-${issue.status.toLowerCase()}">${this._formatStatus(issue.status)}</span>` : ""}
+              </div>
             </div>
-            <div class="issue-message">${this._escapeHtml(issue.message)}</div>
-            ${issue.description ? `<div class="issue-description">${this._escapeHtml(issue.description)}</div>` : ""}
-            <div class="issue-footer">
-              <span class="issue-location" onclick="openFile('${this._escapeHtml(issue.file)}', ${issue.line})">
-                📄 ${this._escapeHtml(issue.file)}:${issue.line}
-              </span>
-              ${issue.effort ? `<span class="issue-effort">⏱️ ${issue.effort}min</span>` : ""}
+            
+            <div class="issue-content">
+              <div class="issue-message">
+                <strong>Issue:</strong> ${this._escapeHtml(issue.message)}
+              </div>
+              
+              ${this._getIssueTimeline(issue)}
+              ${this._getIssueTags(issue)}
+              ${this._getIssueAssignee(issue)}
+              
+              <div class="issue-tabs">
+                <div class="tab-buttons">
+                  <button class="tab-button active" onclick="switchTab(event, 'why-${issue.issueKey || issue.rule}')"><span class="material-icons">help_outline</span> Why is this an issue?</button>
+                  <button class="tab-button" onclick="switchTab(event, 'fix-${issue.issueKey || issue.rule}')"><span class="material-icons">build</span> How to fix it</button>
+                  <button class="tab-button" onclick="switchTab(event, 'location-${issue.issueKey || issue.rule}')"><span class="material-icons">location_on</span> Location</button>
+                </div>
+                
+                <div id="why-${issue.issueKey || issue.rule}" class="tab-content active">
+                  ${this._getWhyIsThisAnIssue(issue)}
+                </div>
+                
+                <div id="fix-${issue.issueKey || issue.rule}" class="tab-content">
+                  ${this._getHowToFixIt(issue)}
+                </div>
+                
+                <div id="location-${issue.issueKey || issue.rule}" class="tab-content">
+                  <div class="issue-location-section">
+                    <span class="issue-location" onclick="openFile('${this._escapeHtml(issue.file)}', ${issue.line})">
+                      <span class="material-icons">folder</span> ${this._escapeHtml(issue.file)} <span class="line-number">Line ${issue.line}</span>
+                    </span>
+                  </div>
+                </div>
+              </div>
+              
+              ${this._getIssueActions(issue)}
+              ${this._getIssueMetadata(issue)}
             </div>
-            ${issue.suggestion ? `<div class="issue-suggestion">💡 ${this._escapeHtml(issue.suggestion)}</div>` : ""}
           </div>`;
           })
           .join("");
@@ -625,7 +842,7 @@ export class GitChangePanel {
         return `
         <div class="file-section">
           <h3 class="file-header">
-            📄 ${this._escapeHtml(fileAnalysis.file)}
+            <span class="material-icons">description</span> ${this._escapeHtml(fileAnalysis.file)}
             <span class="file-stats">${fileAnalysis.issues.length} issue(s) · ${fileAnalysis.linesChanged} lines changed</span>
           </h3>
           <div class="issues-container">
@@ -640,6 +857,226 @@ export class GitChangePanel {
       <h2>Issues</h2>
       ${issuesHtml}
     </div>`;
+  }
+
+  /**
+   * Format issue type for display
+   */
+  private _formatIssueType(type: string): string {
+    const typeMap: Record<string, string> = {
+      bug: '<span class="material-icons">bug_report</span> Bug',
+      vulnerability: '<span class="material-icons">lock</span> Vulnerability',
+      "code-smell": '<span class="material-icons">warning</span> Code Smell',
+      "security-hotspot": '<span class="material-icons">whatshot</span> Security Hotspot',
+      "breaking-change": '<span class="material-icons">warning</span> Breaking Change',
+      performance: '<span class="material-icons">flash_on</span> Performance',
+      architecture: '<span class="material-icons">construction</span> Architecture',
+      testing: '<span class="material-icons">science</span> Testing',
+    };
+    return typeMap[type] || type;
+  }
+
+  /**
+   * Format status for display
+   */
+  private _formatStatus(status: string): string {
+    const statusMap: Record<string, string> = {
+      OPEN: '<span class="material-icons">circle</span> Open',
+      CONFIRMED: '<span class="material-icons">circle</span> Confirmed',
+      REOPENED: '<span class="material-icons">circle</span> Reopened',
+      RESOLVED: '<span class="material-icons">check_circle</span> Resolved',
+      CLOSED: '<span class="material-icons">cancel</span> Closed',
+    };
+    return statusMap[status] || status;
+  }
+
+  /**
+   * Get timeline section HTML
+   */
+  private _getIssueTimeline(issue: CodeIssue): string {
+    if (!issue.creationDate && !issue.updateDate) {
+      return "";
+    }
+
+    return `
+      <div class="issue-timeline-section">
+        <div class="section-title"><span class="material-icons">calendar_today</span> Timeline</div>
+        <div class="timeline-content">
+          ${issue.creationDate ? `<div class="timeline-item">Created: ${this._formatDate(issue.creationDate)}</div>` : ""}
+          ${issue.updateDate ? `<div class="timeline-item">Updated: ${this._formatDate(issue.updateDate)}</div>` : ""}
+        </div>
+      </div>`;
+  }
+
+  /**
+   * Get tags section HTML
+   */
+  private _getIssueTags(issue: CodeIssue): string {
+    if (!issue.tags || issue.tags.length === 0) {
+      return "";
+    }
+
+    return `
+      <div class="issue-tags-section">
+        <div class="section-title"><span class="material-icons">local_offer</span> Tags</div>
+        <div class="tags-container">
+          ${issue.tags.map((tag) => `<span class="tag-badge">${this._escapeHtml(tag)}</span>`).join("")}
+        </div>
+      </div>`;
+  }
+
+  /**
+   * Get assignee section HTML
+   */
+  private _getIssueAssignee(issue: CodeIssue): string {
+    if (!issue.assignee) {
+      return "";
+    }
+
+    return `
+      <div class="issue-assignee-section">
+        <div class="section-title"><span class="material-icons">person</span> Assigned to</div>
+        <div class="assignee-name">${this._escapeHtml(issue.assignee)}</div>
+      </div>`;
+  }
+
+  /**
+   * Get "Why is this an issue?" content
+   */
+  private _getWhyIsThisAnIssue(issue: CodeIssue): string {
+    if (issue.whyIsThisAnIssue) {
+      return `<div class="rule-content">${issue.whyIsThisAnIssue}</div>`;
+    }
+
+    if (issue.description) {
+      return `<div class="rule-content">${this._escapeHtml(issue.description)}</div>`;
+    }
+
+    return `<div class="rule-content"><em>No detailed explanation available for this rule.</em></div>`;
+  }
+
+  /**
+   * Get "How to fix it" content
+   */
+  private _getHowToFixIt(issue: CodeIssue): string {
+    if (issue.howToFixIt) {
+      return `<div class="rule-content">${issue.howToFixIt}</div>`;
+    }
+
+    if (issue.suggestion) {
+      return `
+        <div class="rule-content">
+          <div class="fix-suggestion">
+            <strong>Suggested fix:</strong>
+            <pre>${this._escapeHtml(issue.suggestion)}</pre>
+          </div>
+        </div>`;
+    }
+
+    return `<div class="rule-content"><em>No remediation guidance available for this rule.</em></div>`;
+  }
+
+  /**
+   * Escape string for use in JavaScript attribute
+   */
+  private _escapeJsString(str: string): string {
+    return str
+      .replace(/\\/g, "\\\\")
+      .replace(/'/g, "\\'")
+      .replace(/"/g, '\\"')
+      .replace(/\n/g, "\\n")
+      .replace(/\r/g, "\\r");
+  }
+
+  /**
+   * Get issue actions (buttons)
+   */
+  private _getIssueActions(issue: CodeIssue): string {
+    const actions: string[] = [];
+
+    // Copy button for all issues
+    // Escape values for JavaScript string
+    const escapedFile = this._escapeJsString(issue.file);
+    const escapedMessage = this._escapeJsString(issue.message);
+    const escapedKey = issue.issueKey ? this._escapeJsString(issue.issueKey) : "";
+    const escapedRule = issue.rule ? this._escapeJsString(issue.rule) : "";
+
+    actions.push(
+      `<button class="action-button" onclick="copyIssue('${escapedKey}', '${escapedRule}', '${escapedFile}', ${issue.line}, '${escapedMessage}')"><span class="material-icons">content_copy</span> Copy Issue</button>`
+    );
+
+    if (issue.issueUrl) {
+      actions.push(
+        `<button class="action-button" onclick="openUrl('${this._escapeHtml(issue.issueUrl)}')"><span class="material-icons">link</span> View in SonarQube</button>`
+      );
+    }
+
+    return `
+      <div class="issue-actions">
+        ${actions.join("")}
+      </div>`;
+  }
+
+  /**
+   * Format date for display
+   */
+  private _formatDate(isoDate: string): string {
+    try {
+      const date = new Date(isoDate);
+      const now = new Date();
+      const diffMs = now.getTime() - date.getTime();
+      const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+
+      const formatted = date.toLocaleDateString("en-US", {
+        year: "numeric",
+        month: "short",
+        day: "numeric",
+      });
+
+      if (diffDays === 0) {
+        return `${formatted} (today)`;
+      } else if (diffDays === 1) {
+        return `${formatted} (yesterday)`;
+      } else if (diffDays < 30) {
+        return `${formatted} (${diffDays} days ago)`;
+      }
+
+      return formatted;
+    } catch {
+      return isoDate;
+    }
+  }
+
+  /**
+   * Get issue metadata HTML
+   */
+  private _getIssueMetadata(issue: CodeIssue): string {
+    const metadata: string[] = [];
+
+    if (issue.source === "sonarqube") {
+      metadata.push(
+        `<span class="metadata-item"><span class="material-icons">search</span> Detected by SonarQube static analysis</span>`
+      );
+    } else if (issue.source === "ai") {
+      metadata.push(
+        `<span class="metadata-item"><span class="material-icons">smart_toy</span> Detected by AI code review</span>`
+      );
+    }
+
+    if (issue.issueKey) {
+      metadata.push(
+        `<span class="metadata-item">Key: <code>${this._escapeHtml(issue.issueKey)}</code></span>`
+      );
+    }
+
+    if (metadata.length > 0) {
+      return `
+      <div class="issue-metadata">
+        ${metadata.join(" · ")}
+      </div>`;
+    }
+
+    return "";
   }
 
   /**
@@ -658,7 +1095,23 @@ export class GitChangePanel {
         font-size: var(--vscode-font-size);
         color: var(--vscode-foreground);
         background-color: var(--vscode-editor-background);
-        padding: 20px;
+        padding: 12px;
+      }
+
+      .material-icons {
+        font-family: 'Material Icons';
+        font-weight: normal;
+        font-style: normal;
+        font-size: 18px;
+        line-height: 1;
+        letter-spacing: normal;
+        text-transform: none;
+        display: inline-block;
+        white-space: nowrap;
+        word-wrap: normal;
+        direction: ltr;
+        vertical-align: middle;
+        margin-right: 4px;
       }
 
       .container {
@@ -667,20 +1120,24 @@ export class GitChangePanel {
       }
 
       .header {
-        margin-bottom: 30px;
+        margin-bottom: 16px;
         border-bottom: 2px solid var(--vscode-panel-border);
-        padding-bottom: 20px;
+        padding-bottom: 12px;
       }
 
       .header h1 {
         font-size: 28px;
-        margin-bottom: 10px;
+        margin-bottom: 6px;
+        font-weight: normal;
+        display: flex;
+        align-items: center;
+        gap: 6px;
       }
 
       .subtitle {
         color: var(--vscode-descriptionForeground);
         font-size: 14px;
-        margin-bottom: 15px;
+        margin-bottom: 10px;
       }
 
       .actions {
@@ -692,10 +1149,18 @@ export class GitChangePanel {
         background-color: var(--vscode-button-background);
         color: var(--vscode-button-foreground);
         border: none;
-        padding: 8px 16px;
+        padding: 6px 12px;
         border-radius: 4px;
         cursor: pointer;
         font-size: 13px;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+      }
+
+      button .material-icons {
+        font-size: 16px;
+        margin-right: 0;
       }
 
       button:hover {
@@ -705,13 +1170,13 @@ export class GitChangePanel {
       .summary {
         display: grid;
         grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-        gap: 15px;
-        margin-bottom: 30px;
+        gap: 12px;
+        margin-bottom: 16px;
       }
 
       .summary-card {
         background-color: var(--vscode-editor-inactiveSelectionBackground);
-        padding: 20px;
+        padding: 12px;
         border-radius: 8px;
         text-align: center;
       }
@@ -729,13 +1194,12 @@ export class GitChangePanel {
       .summary-label {
         font-size: 12px;
         color: var(--vscode-descriptionForeground);
-        margin-bottom: 8px;
+        margin-bottom: 4px;
         text-transform: uppercase;
       }
 
       .summary-value {
         font-size: 32px;
-        font-weight: bold;
       }
 
       .severity-breakdown {
@@ -763,7 +1227,7 @@ export class GitChangePanel {
 
       .severity-label {
         width: 80px;
-        font-weight: bold;
+        font-size: 15px;
       }
 
       .severity-label.critical { color: #ff0000; }
@@ -794,24 +1258,26 @@ export class GitChangePanel {
       .severity-count {
         width: 50px;
         text-align: right;
-        font-weight: bold;
+        font-size: 15px;
       }
 
       .filters {
-        margin-bottom: 30px;
-        padding: 15px;
+        margin-bottom: 16px;
+        padding: 12px;
         background-color: var(--vscode-editor-inactiveSelectionBackground);
         border-radius: 8px;
       }
 
       .filters h3 {
-        margin-bottom: 10px;
+        margin-bottom: 8px;
+        font-weight: normal;
+        font-size: 16px;
       }
 
       .filter-group {
         display: flex;
-        gap: 15px;
-        margin-bottom: 10px;
+        gap: 12px;
+        margin-bottom: 6px;
       }
 
       .filter-group label {
@@ -821,21 +1287,30 @@ export class GitChangePanel {
       }
 
       .issues-section h2 {
-        margin-bottom: 20px;
+        margin-bottom: 12px;
+        font-weight: normal;
+        font-size: 20px;
       }
 
       .file-section {
-        margin-bottom: 30px;
+        margin-bottom: 16px;
       }
 
       .file-header {
         background-color: var(--vscode-editor-inactiveSelectionBackground);
-        padding: 12px;
+        padding: 8px 12px;
         border-radius: 6px;
-        margin-bottom: 15px;
+        margin-bottom: 10px;
         display: flex;
         justify-content: space-between;
         align-items: center;
+        font-weight: normal;
+        font-size: 15px;
+        gap: 8px;
+      }
+
+      .file-header .material-icons {
+        font-size: 18px;
       }
 
       .file-stats {
@@ -847,14 +1322,15 @@ export class GitChangePanel {
       .issues-container {
         display: flex;
         flex-direction: column;
-        gap: 10px;
+        gap: 8px;
       }
 
       .issue {
-        padding: 15px;
+        padding: 0;
         border-left: 4px solid;
-        border-radius: 4px;
+        border-radius: 6px;
         background-color: var(--vscode-editor-inactiveSelectionBackground);
+        overflow: hidden;
       }
 
       .issue.critical { border-left-color: #ff0000; }
@@ -865,16 +1341,49 @@ export class GitChangePanel {
 
       .issue-header {
         display: flex;
-        gap: 8px;
-        margin-bottom: 10px;
+        justify-content: space-between;
+        align-items: center;
+        padding: 8px 12px;
+        background-color: rgba(0, 0, 0, 0.1);
+        border-bottom: 1px solid var(--vscode-panel-border);
       }
 
-      .severity-badge, .type-badge, .source-badge {
-        padding: 2px 8px;
-        border-radius: 3px;
+      .issue-badges {
+        display: flex;
+        gap: 6px;
+        flex-wrap: wrap;
+        align-items: center;
+      }
+
+      .issue-badges .material-icons {
+        font-size: 14px;
+        margin-right: 2px;
+      }
+
+      .issue-header-right {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+      }
+
+      .severity-badge, .type-badge, .source-badge, .rule-badge, .status-badge {
+        padding: 4px 10px;
+        border-radius: 4px;
         font-size: 11px;
-        font-weight: bold;
         text-transform: uppercase;
+        font-weight: 600;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+      }
+
+      .severity-badge .material-icons,
+      .type-badge .material-icons,
+      .source-badge .material-icons,
+      .rule-badge .material-icons,
+      .status-badge .material-icons {
+        font-size: 14px;
+        margin-right: 0;
       }
 
       .severity-badge.critical { background-color: #ff0000; color: white; }
@@ -886,6 +1395,7 @@ export class GitChangePanel {
       .type-badge {
         background-color: var(--vscode-badge-background);
         color: var(--vscode-badge-foreground);
+        text-transform: none;
       }
 
       .source-badge {
@@ -893,40 +1403,330 @@ export class GitChangePanel {
         color: var(--vscode-button-secondaryForeground);
       }
 
+      .rule-badge {
+        background-color: var(--vscode-input-background);
+        color: var(--vscode-foreground);
+        text-transform: none;
+        font-family: var(--vscode-editor-font-family);
+      }
+
+      .rule-badge .rule-link {
+        color: var(--vscode-textLink-foreground);
+        text-decoration: none;
+        cursor: pointer;
+      }
+
+      .rule-badge .rule-link:hover {
+        text-decoration: underline;
+        color: var(--vscode-textLink-activeForeground);
+      }
+
+      .issue-content {
+        padding: 12px;
+      }
+
       .issue-message {
-        font-weight: bold;
-        margin-bottom: 8px;
+        font-size: 14px;
+        margin-bottom: 10px;
+        line-height: 1.5;
+      }
+
+      .issue-message strong {
+        color: var(--vscode-textPreformat-foreground);
+      }
+
+      .section-title {
+        font-size: 13px;
+        font-weight: 600;
+        margin-bottom: 6px;
+        color: var(--vscode-textPreformat-foreground);
+        display: flex;
+        align-items: center;
+        gap: 4px;
+      }
+
+      .section-title .material-icons {
+        font-size: 16px;
+        margin-right: 0;
+      }
+
+      .issue-description-section {
+        margin-bottom: 15px;
+        padding: 12px;
+        background-color: rgba(0, 0, 0, 0.05);
+        border-radius: 4px;
       }
 
       .issue-description {
-        color: var(--vscode-descriptionForeground);
-        margin-bottom: 8px;
+        color: var(--vscode-foreground);
         font-size: 13px;
+        line-height: 1.6;
       }
 
-      .issue-footer {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        font-size: 12px;
-        color: var(--vscode-descriptionForeground);
+      .issue-location-section {
+        margin-bottom: 15px;
+        padding: 10px;
+        background-color: rgba(0, 0, 0, 0.05);
+        border-radius: 4px;
       }
 
       .issue-location {
         cursor: pointer;
         color: var(--vscode-textLink-foreground);
+        font-size: 13px;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+      }
+
+      .issue-location .material-icons {
+        font-size: 16px;
+        margin-right: 0;
       }
 
       .issue-location:hover {
         text-decoration: underline;
       }
 
-      .issue-suggestion {
-        margin-top: 10px;
-        padding: 10px;
-        background-color: var(--vscode-editor-background);
+      .line-number {
+        font-weight: 600;
+        background-color: var(--vscode-badge-background);
+        color: var(--vscode-badge-foreground);
+        padding: 2px 6px;
+        border-radius: 3px;
+        font-size: 11px;
+      }
+
+      .issue-solution-section {
+        margin-bottom: 15px;
+        padding: 12px;
+        background-color: rgba(76, 175, 80, 0.1);
+        border-left: 3px solid #4caf50;
         border-radius: 4px;
+      }
+
+      .issue-suggestion {
+        color: var(--vscode-foreground);
         font-size: 13px;
+        line-height: 1.6;
+        white-space: pre-wrap;
+      }
+
+      .issue-metadata {
+        margin-top: 10px;
+        padding-top: 10px;
+        border-top: 1px solid var(--vscode-panel-border);
+        font-size: 11px;
+        color: var(--vscode-descriptionForeground);
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+
+      .metadata-item {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+      }
+
+      .metadata-item .material-icons {
+        font-size: 14px;
+        margin-right: 0;
+      }
+
+      .metadata-item code {
+        background-color: var(--vscode-textCodeBlock-background);
+        padding: 2px 6px;
+        border-radius: 3px;
+        font-family: var(--vscode-editor-font-family);
+      }
+
+      /* Status badges */
+      .status-badge.status-open { background-color: #f44336; color: white; }
+      .status-badge.status-confirmed { background-color: #ff9800; color: white; }
+      .status-badge.status-reopened { background-color: #2196f3; color: white; }
+      .status-badge.status-resolved { background-color: #4caf50; color: white; }
+      .status-badge.status-closed { background-color: #666; color: white; }
+
+      /* Timeline section */
+      .issue-timeline-section, .issue-tags-section, .issue-assignee-section {
+        margin-bottom: 10px;
+        padding: 8px 10px;
+        background-color: rgba(0, 0, 0, 0.05);
+        border-radius: 4px;
+      }
+
+      .timeline-content {
+        margin-top: 4px;
+        font-size: 13px;
+        line-height: 1.5;
+      }
+
+      .timeline-item {
+        color: var(--vscode-descriptionForeground);
+        margin-bottom: 2px;
+      }
+
+      /* Tags */
+      .tags-container {
+        display: flex;
+        gap: 6px;
+        flex-wrap: wrap;
+        margin-top: 5px;
+      }
+
+      .tag-badge {
+        background-color: var(--vscode-badge-background);
+        color: var(--vscode-badge-foreground);
+        padding: 3px 10px;
+        border-radius: 12px;
+        font-size: 11px;
+        font-weight: 500;
+      }
+
+      /* Assignee */
+      .assignee-name {
+        margin-top: 4px;
+        font-size: 13px;
+        font-weight: 500;
+      }
+
+      /* Tabs */
+      .issue-tabs {
+        margin: 10px 0;
+      }
+
+      .tab-buttons {
+        display: flex;
+        gap: 4px;
+        border-bottom: 2px solid var(--vscode-panel-border);
+        margin-bottom: 10px;
+      }
+
+      .tab-button {
+        background: none;
+        border: none;
+        padding: 6px 12px;
+        cursor: pointer;
+        font-size: 13px;
+        color: var(--vscode-foreground);
+        opacity: 0.7;
+        border-bottom: 2px solid transparent;
+        margin-bottom: -2px;
+        transition: all 0.2s;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+      }
+
+      .tab-button .material-icons {
+        font-size: 16px;
+        margin-right: 0;
+      }
+
+      .tab-button:hover {
+        opacity: 1;
+        background-color: rgba(0, 0, 0, 0.05);
+      }
+
+      .tab-button.active {
+        opacity: 1;
+        border-bottom-color: var(--vscode-button-background);
+        font-weight: 600;
+      }
+
+      .tab-content {
+        display: none;
+        padding: 10px 0;
+      }
+
+      .tab-content.active {
+        display: block;
+      }
+
+      .rule-content {
+        font-size: 13px;
+        line-height: 1.7;
+      }
+
+      .rule-content h1, .rule-content h2, .rule-content h3 {
+        margin: 15px 0 10px 0;
+        font-weight: 600;
+      }
+
+      .rule-content h1 { font-size: 18px; }
+      .rule-content h2 { font-size: 16px; }
+      .rule-content h3 { font-size: 14px; }
+
+      .rule-content p {
+        margin: 8px 0;
+      }
+
+      .rule-content pre {
+        background-color: var(--vscode-textCodeBlock-background);
+        padding: 10px;
+        border-radius: 4px;
+        overflow-x: auto;
+        font-family: var(--vscode-editor-font-family);
+        font-size: 12px;
+        margin: 10px 0;
+      }
+
+      .rule-content code {
+        background-color: var(--vscode-textCodeBlock-background);
+        padding: 2px 6px;
+        border-radius: 3px;
+        font-family: var(--vscode-editor-font-family);
+        font-size: 12px;
+      }
+
+      .rule-content ul, .rule-content ol {
+        margin: 8px 0;
+        padding-left: 25px;
+      }
+
+      .rule-content li {
+        margin: 5px 0;
+      }
+
+      .fix-suggestion {
+        background-color: rgba(76, 175, 80, 0.1);
+        padding: 12px;
+        border-left: 3px solid #4caf50;
+        border-radius: 4px;
+      }
+
+      /* Issue actions */
+      .issue-actions {
+        margin: 10px 0;
+        padding: 8px;
+        background-color: rgba(0, 0, 0, 0.05);
+        border-radius: 4px;
+        display: flex;
+        gap: 8px;
+      }
+
+      .action-button {
+        background-color: var(--vscode-button-background);
+        color: var(--vscode-button-foreground);
+        border: none;
+        padding: 6px 12px;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 13px;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+      }
+
+      .action-button .material-icons {
+        font-size: 16px;
+        margin-right: 0;
+      }
+
+      .action-button:hover {
+        background-color: var(--vscode-button-hoverBackground);
       }
 
       .empty-state {
@@ -937,6 +1737,7 @@ export class GitChangePanel {
       .empty-state h1 {
         font-size: 36px;
         margin-bottom: 20px;
+        font-weight: normal;
       }
 
       .empty-state ul {
@@ -959,6 +1760,7 @@ export class GitChangePanel {
       .analyzing-state h1 {
         font-size: 36px;
         margin-bottom: 40px;
+        font-weight: normal;
       }
 
       .progress-container {
@@ -969,8 +1771,7 @@ export class GitChangePanel {
         display: flex;
         justify-content: space-between;
         margin-bottom: 10px;
-        font-size: 14px;
-        font-weight: bold;
+        font-size: 16px;
       }
 
       .progress-bar-bg {
@@ -1056,6 +1857,60 @@ export class GitChangePanel {
         // TODO: Implement grouping logic
         console.log('Grouping by:', groupBySelect.value);
       }
+
+      // Tab switching
+      function switchTab(event, tabId) {
+        event.preventDefault();
+        
+        // Get the issue container
+        const button = event.target;
+        const tabButtons = button.parentElement;
+        const issueContent = tabButtons.parentElement;
+        
+        // Hide all tab contents in this issue
+        const tabContents = issueContent.querySelectorAll('.tab-content');
+        tabContents.forEach(content => {
+          content.classList.remove('active');
+        });
+        
+        // Remove active class from all buttons
+        const buttons = tabButtons.querySelectorAll('.tab-button');
+        buttons.forEach(btn => {
+          btn.classList.remove('active');
+        });
+        
+        // Show selected tab and mark button as active
+        const selectedTab = document.getElementById(tabId);
+        if (selectedTab) {
+          selectedTab.classList.add('active');
+        }
+        button.classList.add('active');
+      }
+
+      // Open URL in external browser
+      function openUrl(url) {
+        vscode.postMessage({
+          command: 'openUrl',
+          url: url
+        });
+      }
+
+      // Copy issue to clipboard
+      function copyIssue(issueKey, issueRule, issueFile, issueLine, issueMessage) {
+        vscode.postMessage({
+          command: 'copyIssue',
+          issueKey: issueKey || undefined,
+          issueRule: issueRule || undefined,
+          issueFile: issueFile,
+          issueLine: issueLine,
+          issueMessage: issueMessage
+        });
+      }
+
+      // Make functions available globally
+      window.switchTab = switchTab;
+      window.openUrl = openUrl;
+      window.copyIssue = copyIssue;
     `;
   }
 
