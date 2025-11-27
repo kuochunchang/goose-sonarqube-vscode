@@ -5,7 +5,9 @@
       "Bash(git add:*)",
       "Bash(git reset:*)",
       "Bash(git commit --amend -m \"$(cat <<''EOF''\nfeat: Add goose icon to SCM title bar for Git Analysis Menu\n\nAdd a custom goose SVG icon to the Source Control Management (SCM) title bar\nthat triggers the Git Analysis Menu when clicked.\n\nChanges:\n- Add custom goose.svg icon in resources/icons/\n- Configure goose icon for showGitAnalysisMenu command in package.json\n- Remove status bar implementation (use SCM title bar instead)\n- Add .vscodeignore to properly package extension resources\n\nThe goose icon appears in the SCM panel header and provides quick access to:\n- Analyze working directory changes\n- Compare branches  \n- Analyze pull requests\n- Configure analysis settings\n\n🦆 Generated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n)\")",
-      "Bash(git commit:*)"
+      "Bash(git commit:*)",
+      "Bash(npm run format:*)",
+      "Bash(git checkout:*)"
     ],
     "deny": [],
     "ask": []

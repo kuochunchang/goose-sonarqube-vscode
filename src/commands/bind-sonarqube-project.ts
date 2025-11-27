@@ -51,7 +51,7 @@ export async function bindSonarQubeProject(context: vscode.ExtensionContext): Pr
     // Step 2: Get project key
     const projectKey = await vscode.window.showInputBox({
       prompt: "Enter SonarQube project key",
-      placeHolder: "my-project-key",
+      value: "my-project-key",
       validateInput: (value) => {
         if (!value || value.trim().length === 0) {
           return "Project key is required";
@@ -67,7 +67,7 @@ export async function bindSonarQubeProject(context: vscode.ExtensionContext): Pr
     // Step 3: Get project name (optional)
     const projectName = await vscode.window.showInputBox({
       prompt: "Enter project display name (optional)",
-      placeHolder: "My Project",
+      value: "My Project",
     });
 
     // Step 4: Create binding

@@ -6,6 +6,7 @@
 import * as vscode from "vscode";
 import type { AnalysisType } from "../git-analyzer/index.js";
 import { GitAnalysisService } from "../services/git-analysis-service.js";
+import { SonarQubeConfigService } from "../services/sonarqube-config-service.js";
 import {
   executeAnalysisWithProgress,
   showAnalyzingPanel,
@@ -22,6 +23,49 @@ import { analyzeWorkingDirectory } from "./analyze-working-directory.js";
  */
 interface QuickMenuItem extends vscode.QuickPickItem {
   action: () => Promise<void>;
+}
+
+/**
+ * Check SonarQube configuration and prompt user if incomplete
+ * Returns true if configuration is complete, false otherwise
+ */
+async function checkAndPromptConfiguration(context: vscode.ExtensionContext): Promise<boolean> {
+  const configService = new SonarQubeConfigService(context);
+  const configStatus = await configService.checkConfiguration();
+
+  if (configStatus.isComplete) {
+    return true;
+  }
+
+  // Configuration is incomplete, show detailed message
+  const message = `SonarQube configuration is incomplete:\n\n${configStatus.missingSteps.map((step) => `• ${step}`).join("\n")}`;
+
+  const action = await vscode.window.showWarningMessage(
+    message,
+    { modal: false },
+    "Add Connection",
+    "Bind Project",
+    "Open Settings"
+  );
+
+  switch (action) {
+    case "Add Connection":
+      await vscode.commands.executeCommand("gooseSonarQube.addConnection");
+      // Check again after adding connection
+      return (await configService.checkConfiguration()).isComplete;
+
+    case "Bind Project":
+      await vscode.commands.executeCommand("gooseSonarQube.bindProject");
+      // Check again after binding
+      return (await configService.checkConfiguration()).isComplete;
+
+    case "Open Settings":
+      await vscode.commands.executeCommand("workbench.action.openSettings", "gooseSonarQube");
+      return false;
+
+    default:
+      return false;
+  }
 }
 
 /**
@@ -66,7 +110,11 @@ export async function showGitAnalysisMenu(
         description: "Analyze working directory with previous settings",
         detail: "Fast analysis using your last selected analysis types",
         action: async () => {
-          await analyzeWorkingDirectoryQuick(context, gitAnalysisService);
+          // Check configuration before analyzing
+          const configOk = await checkAndPromptConfiguration(context);
+          if (configOk) {
+            await analyzeWorkingDirectoryQuick(context, gitAnalysisService);
+          }
         },
       });
     }
@@ -83,7 +131,11 @@ export async function showGitAnalysisMenu(
         description: "Review uncommitted changes",
         detail: "Choose analysis types and review all uncommitted changes",
         action: async () => {
-          await analyzeWorkingDirectory(context, gitAnalysisService);
+          // Check configuration before analyzing
+          const configOk = await checkAndPromptConfiguration(context);
+          if (configOk) {
+            await analyzeWorkingDirectory(context, gitAnalysisService);
+          }
         },
       });
     } else {
@@ -158,6 +210,24 @@ export async function showGitAnalysisMenu(
       detail: "Quickly switch or update the bound SonarQube project",
       action: async () => {
         await vscode.commands.executeCommand("gooseSonarQube.manageProjectBinding");
+      },
+    });
+
+    menuItems.push({
+      label: "$(debug-disconnect) Test SonarQube Connection",
+      description: "Verify connection to SonarQube server",
+      detail: "Check if your SonarQube connection is working correctly",
+      action: async () => {
+        await vscode.commands.executeCommand("gooseSonarQube.testConnection");
+      },
+    });
+
+    menuItems.push({
+      label: "$(bug) Diagnose SonarQube Integration",
+      description: "Check configuration and connection status",
+      detail: "Get detailed diagnostic information about your SonarQube setup",
+      action: async () => {
+        await vscode.commands.executeCommand("gooseSonarQube.diagnose");
       },
     });
 
