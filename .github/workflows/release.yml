@@ -6,12 +6,7 @@ on:
       - 'v*'  # Trigger on version tags like v1.0.0
   release:
     types: [created]
-  workflow_dispatch:
-    inputs:
-      version:
-        description: 'Version to release (e.g., 1.0.0)'
-        required: false
-        type: string
+  workflow_dispatch:  # Manual trigger for testing build process
 
 jobs:
   release:
@@ -39,8 +34,16 @@ jobs:
         run: npm run lint
         continue-on-error: false
 
+      - name: Check formatting
+        run: npm run format:check
+        continue-on-error: false
+
+      - name: Type check
+        run: npx tsc --noEmit
+        continue-on-error: false
+
       - name: Build extension
-        run: npm run build
+        run: npm run compile:production
         continue-on-error: false
 
       - name: Package extension
@@ -62,13 +65,13 @@ jobs:
           retention-days: 30
 
       - name: Publish to VS Code Marketplace
-        if: (github.event_name == 'release' || github.event_name == 'push') && secrets.VSCE_PAT != ''
+        if: (github.event_name == 'release' || github.event_name == 'push') && secrets.VSCE_PAT
         run: |
           VSIX_FILE=$(ls *.vsix | head -n 1)
           npx @vscode/vsce publish "$VSIX_FILE" -p ${{ secrets.VSCE_PAT }}
 
       - name: Publish to Open VSX Registry
-        if: (github.event_name == 'release' || github.event_name == 'push') && secrets.OPEN_VSX_TOKEN != ''
+        if: (github.event_name == 'release' || github.event_name == 'push') && secrets.OPEN_VSX_TOKEN
         run: |
           VSIX_FILE=$(ls *.vsix | head -n 1)
           npx -y ovsx publish "$VSIX_FILE" -p ${{ secrets.OPEN_VSX_TOKEN }}
