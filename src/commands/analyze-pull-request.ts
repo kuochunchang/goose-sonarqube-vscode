@@ -48,7 +48,7 @@ export async function analyzePullRequest(
     if (!repository) {
       const repoInput = await vscode.window.showInputBox({
         prompt: "Enter GitHub repository (format: owner/repo)",
-        placeHolder: "e.g., microsoft/vscode",
+        value: "microsoft/vscode",
         validateInput: (value) => {
           if (!value || !value.match(/^[\w-]+\/[\w-]+$/)) {
             return "Invalid format. Please use: owner/repo";

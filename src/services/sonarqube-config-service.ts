@@ -198,4 +198,52 @@ export class SonarQubeConfigService {
   getAnalysisMode(): "sonarqube-only" {
     return "sonarqube-only";
   }
+
+  /**
+   * Check if SonarQube configuration is complete
+   * Returns an object with status and missing configuration details
+   */
+  async checkConfiguration(): Promise<{
+    isComplete: boolean;
+    missingSteps: string[];
+    hasConnection: boolean;
+    hasBinding: boolean;
+    hasToken: boolean;
+  }> {
+    const missingSteps: string[] = [];
+    const connections = this.getConnections();
+    const binding = this.getProjectBinding();
+
+    const hasConnection = connections.length > 0;
+    const hasBinding = binding !== null;
+    let hasToken = false;
+
+    if (!hasConnection) {
+      missingSteps.push("No SonarQube connection configured");
+    }
+
+    if (!hasBinding) {
+      missingSteps.push("No project binding configured");
+    } else {
+      // Check if the connection exists and has a token
+      const connection = connections.find((c) => c.connectionId === binding.connectionId);
+      if (!connection) {
+        missingSteps.push("Project binding references a non-existent connection");
+      } else {
+        const token = await this.getToken(binding.connectionId);
+        hasToken = !!token;
+        if (!token) {
+          missingSteps.push("No authentication token found for the connection");
+        }
+      }
+    }
+
+    return {
+      isComplete: missingSteps.length === 0,
+      missingSteps,
+      hasConnection,
+      hasBinding,
+      hasToken,
+    };
+  }
 }

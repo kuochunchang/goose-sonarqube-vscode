@@ -19,7 +19,7 @@ export async function addSonarQubeConnection(context: vscode.ExtensionContext): 
     // Step 1: Get connection ID
     const connectionId = await vscode.window.showInputBox({
       prompt: "Enter a unique connection identifier (e.g., local-sonarqube, sonarcloud)",
-      placeHolder: "local-sonarqube",
+      value: "local-sonarqube",
       validateInput: (value) => {
         if (!value || value.trim().length === 0) {
           return "Connection ID is required";
@@ -39,7 +39,7 @@ export async function addSonarQubeConnection(context: vscode.ExtensionContext): 
     // Step 2: Get server URL
     const serverUrl = await vscode.window.showInputBox({
       prompt: "Enter SonarQube server URL (e.g., http://localhost:9000 or https://sonarcloud.io)",
-      placeHolder: "http://localhost:9000",
+      value: "http://localhost:9000",
       validateInput: (value) => {
         if (!value || value.trim().length === 0) {
           return "Server URL is required";
@@ -63,7 +63,7 @@ export async function addSonarQubeConnection(context: vscode.ExtensionContext): 
     if (isSonarCloud) {
       const orgKey = await vscode.window.showInputBox({
         prompt: "Enter SonarCloud organization key",
-        placeHolder: "my-org",
+        value: "my-org",
         validateInput: (value) => {
           if (!value || value.trim().length === 0) {
             return "Organization key is required for SonarCloud";
