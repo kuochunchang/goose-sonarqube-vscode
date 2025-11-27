@@ -6,12 +6,7 @@ on:
       - 'v*'  # Trigger on version tags like v1.0.0
   release:
     types: [created]
-  workflow_dispatch:
-    inputs:
-      version:
-        description: 'Version to release (e.g., 1.0.0)'
-        required: false
-        type: string
+  workflow_dispatch:  # Manual trigger for testing build process
 
 jobs:
   release:
