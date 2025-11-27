@@ -96,9 +96,11 @@ jobs:
       
       - name: Run ESLint
         run: npm run lint
+        continue-on-error: false
       
       - name: Check Prettier formatting
         run: npm run format:check
+        continue-on-error: false
 
   type-check:
     name: Type Check
