@@ -76,7 +76,9 @@ export interface MergeConfig {
  * MergeService - Combines SonarQube and AI analysis results
  */
 export class MergeService {
-  private readonly config: Required<Omit<MergeConfig, "sonarQubeServerUrl" | "sonarQubeProjectKey">> &
+  private readonly config: Required<
+    Omit<MergeConfig, "sonarQubeServerUrl" | "sonarQubeProjectKey">
+  > &
     Pick<MergeConfig, "sonarQubeServerUrl" | "sonarQubeProjectKey">;
 
   constructor(config: MergeConfig = {}) {
