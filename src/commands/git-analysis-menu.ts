@@ -29,9 +29,7 @@ interface QuickMenuItem extends vscode.QuickPickItem {
  * Check SonarQube configuration and prompt user if incomplete
  * Returns true if configuration is complete, false otherwise
  */
-async function checkAndPromptConfiguration(
-  context: vscode.ExtensionContext
-): Promise<boolean> {
+async function checkAndPromptConfiguration(context: vscode.ExtensionContext): Promise<boolean> {
   const configService = new SonarQubeConfigService(context);
   const configStatus = await configService.checkConfiguration();
 
