@@ -7,13 +7,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.1] - 2025-11-27
+
 ### Added
-- GitHub Actions workflows for automated CI/CD
-- Automated publishing to VS Code Marketplace via GitHub Actions
-- Pre-release workflow for testing before official releases
+- Enhanced report export functionality with improved formatting options
+- Added panel header information support in report exports (title, subtitle, change source)
+- Improved issue display with tabs for "Why is this an issue?", "How to fix it", and "Location"
+- Added Material Icons support for better visual presentation
+- Enhanced issue metadata display (timeline, tags, assignee, status)
+- Added SonarQube issue URL links for direct access to issues
+
+### Fixed
+- Improved release workflow with production build configuration
+- Added format checking and TypeScript type checking to release process
+- Fixed secrets checking syntax in GitHub Actions workflows
+- Removed unused version input parameter from release workflow
+- Resolved all ESLint and Prettier formatting errors
 
 ### Changed
-- Documentation updates for release process
+- Release workflow now uses `compile:production` for proper production builds
+- Enhanced CI/CD pipeline with comprehensive validation steps
+- Improved MergeService type safety with refined configuration structure
+- Enhanced GitAnalysisService with detailed rule information
+- Migrated to ES module syntax throughout the codebase
 
 ## [0.2.0] - 2024-XX-XX
 
@@ -60,7 +76,8 @@ When releasing a new version:
 - **Fixed** - Bug fixes
 - **Security** - Security vulnerability fixes
 
-[Unreleased]: https://github.com/kuochunchang/goose-sonarqube-vscode/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/kuochunchang/goose-sonarqube-vscode/compare/v0.2.1...HEAD
+[0.2.1]: https://github.com/kuochunchang/goose-sonarqube-vscode/compare/v0.2.0...v0.2.1
 [0.2.0]: https://github.com/kuochunchang/goose-sonarqube-vscode/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/kuochunchang/goose-sonarqube-vscode/releases/tag/v0.1.0
 

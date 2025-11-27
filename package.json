@@ -2,7 +2,7 @@
     "name": "goose-sonarqube-vscode",
     "displayName": "Goose SonarQube",
     "description": "SonarQube integration and Git change analysis for VS Code",
-    "version": "0.2.0",
+    "version": "0.2.1",
     "type": "module",
     "publisher": "kuochunchang",
     "icon": "resources/icons/extension-icon.jpg",
