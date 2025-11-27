@@ -494,10 +494,146 @@ export class SonarQubeService {
 
     const startTime = Date.now();
     const pollInterval = 2000; // Poll every 2 seconds
+    const requestTimeout = this.config.timeout || 10000; // Default 10s for each request
 
     while (Date.now() - startTime < timeout) {
-      const url = new URL(`${this.config.serverUrl}/api/ce/task`);
-      url.searchParams.set("id", taskId);
+      try {
+        const url = new URL(`${this.config.serverUrl}/api/ce/task`);
+        url.searchParams.set("id", taskId);
+
+        const response = await fetch(url.toString(), {
+          method: "GET",
+          headers: {
+            Authorization: this.config.token
+              ? `Basic ${Buffer.from(this.config.token + ":").toString("base64")}`
+              : "",
+          },
+          signal: AbortSignal.timeout(requestTimeout),
+        });
+
+        if (!response.ok) {
+          console.warn(
+            `[SonarQubeService] Task status check failed: ${response.status} ${response.statusText}`
+          );
+          throw new Error(`Failed to check task status: ${response.status} ${response.statusText}`);
+        }
+
+        const data = (await response.json()) as {
+          task: {
+            status: string;
+            errorMessage?: string;
+          };
+        };
+
+        console.log(`[SonarQubeService] Task ${taskId} status: ${data.task.status}`);
+
+        if (data.task.status === "SUCCESS") {
+          return true;
+        }
+
+        if (data.task.status === "FAILED" || data.task.status === "CANCELED") {
+          throw new Error(`Analysis failed: ${data.task.errorMessage || data.task.status}`);
+        }
+
+        // Wait before polling again
+        await new Promise((resolve) => setTimeout(resolve, pollInterval));
+      } catch (error) {
+        // If it's a timeout or network error, log and retry (unless we've exceeded overall timeout)
+        if (
+          error instanceof Error &&
+          (error.name === "AbortError" ||
+            error.message.includes("fetch failed") ||
+            error.message.includes("ECONNREFUSED") ||
+            error.message.includes("ETIMEDOUT"))
+        ) {
+          const elapsedTime = Date.now() - startTime;
+          console.warn(
+            `[SonarQubeService] Network error while checking task status (${elapsedTime}ms elapsed): ${error.message}`
+          );
+
+          // If we've exceeded the overall timeout, throw
+          if (elapsedTime >= timeout) {
+            throw new Error(
+              `Analysis timeout: Could not verify task completion due to network errors. Server: ${this.config.serverUrl}`
+            );
+          }
+
+          // Otherwise, wait and retry
+          await new Promise((resolve) => setTimeout(resolve, pollInterval));
+          continue;
+        }
+
+        // For other errors (like "Failed to check task status"), throw immediately
+        throw error;
+      }
+    }
+
+    throw new Error("Analysis timeout: Task did not complete within the specified time");
+  }
+
+  /**
+   * Rule description section (SonarQube 9.x+ format)
+   */
+  private parseDescriptionSections(sections: Array<{ key: string; content: string }> | undefined): {
+    whyIsThisAnIssue: string;
+    howToFixIt: string;
+  } {
+    if (!sections || sections.length === 0) {
+      return { whyIsThisAnIssue: "", howToFixIt: "" };
+    }
+
+    let whyIsThisAnIssue = "";
+    let howToFixIt = "";
+
+    for (const section of sections) {
+      const key = section.key.toLowerCase();
+      if (key === "root_cause" || key === "introduction" || key === "why") {
+        whyIsThisAnIssue += section.content + "\n";
+      } else if (
+        key === "how_to_fix" ||
+        key === "how to fix it" ||
+        key === "resources" ||
+        key === "fix"
+      ) {
+        howToFixIt += section.content + "\n";
+      }
+    }
+
+    // If no specific sections found, combine all as "why"
+    if (!whyIsThisAnIssue && !howToFixIt) {
+      whyIsThisAnIssue = sections.map((s) => s.content).join("\n");
+    }
+
+    return { whyIsThisAnIssue: whyIsThisAnIssue.trim(), howToFixIt: howToFixIt.trim() };
+  }
+
+  /**
+   * Get rule details including description and remediation
+   * @param ruleKey Rule key (e.g., "typescript:S7772")
+   * @returns Rule details with HTML description
+   */
+  async getRuleDetails(ruleKey: string): Promise<{
+    name: string;
+    htmlDesc: string;
+    whyIsThisAnIssue?: string;
+    howToFixIt?: string;
+    htmlNote?: string;
+    remediationFnBaseEffort?: string;
+  } | null> {
+    console.log(
+      `[SonarQubeService] getRuleDetails called for: ${ruleKey}, mode: ${this.mode}, isAvailable: ${this.isAvailable()}`
+    );
+
+    if (!this.isAvailable()) {
+      console.log(`[SonarQubeService] getRuleDetails: service not available (mode: ${this.mode})`);
+      return null;
+    }
+
+    try {
+      const url = new URL(`${this.config.serverUrl}/api/rules/show`);
+      url.searchParams.set("key", ruleKey);
+
+      console.log(`[SonarQubeService] Fetching rule details from: ${url.toString()}`);
 
       const response = await fetch(url.toString(), {
         method: "GET",
@@ -508,29 +644,89 @@ export class SonarQubeService {
         },
       });
 
+      console.log(`[SonarQubeService] Rule API response status: ${response.status}`);
+
       if (!response.ok) {
-        throw new Error(`Failed to check task status: ${response.status} ${response.statusText}`);
+        const errorText = await response.text();
+        console.warn(
+          `[SonarQubeService] Failed to fetch rule details for ${ruleKey}: ${response.status} - ${errorText}`
+        );
+        return null;
       }
 
       const data = (await response.json()) as {
-        task: {
-          status: string;
-          errorMessage?: string;
+        rule: {
+          name: string;
+          htmlDesc?: string;
+          mdDesc?: string;
+          descriptionSections?: Array<{ key: string; content: string }>;
+          htmlNote?: string;
+          remediationFnBaseEffort?: string;
         };
       };
 
-      if (data.task.status === "SUCCESS") {
-        return true;
+      const rule = data.rule;
+      console.log(`[SonarQubeService] Got rule details for ${ruleKey}: ${rule?.name || "unknown"}`);
+      console.log(`[SonarQubeService] htmlDesc length: ${rule?.htmlDesc?.length || 0}`);
+      console.log(`[SonarQubeService] mdDesc length: ${rule?.mdDesc?.length || 0}`);
+      console.log(
+        `[SonarQubeService] descriptionSections count: ${rule?.descriptionSections?.length || 0}`
+      );
+
+      // Handle new SonarQube 9.x+ format with descriptionSections
+      let whyIsThisAnIssue = "";
+      let howToFixIt = "";
+      let htmlDesc = rule?.htmlDesc || "";
+
+      if (rule?.descriptionSections && rule.descriptionSections.length > 0) {
+        console.log(`[SonarQubeService] Using descriptionSections format`);
+        const parsed = this.parseDescriptionSections(rule.descriptionSections);
+        whyIsThisAnIssue = parsed.whyIsThisAnIssue;
+        howToFixIt = parsed.howToFixIt;
+
+        // Build htmlDesc from sections if not available
+        if (!htmlDesc) {
+          htmlDesc = rule.descriptionSections
+            .map((s) => `<h2>${s.key}</h2>${s.content}`)
+            .join("\n");
+        }
+      } else if (rule?.mdDesc) {
+        // Use markdown description if available
+        console.log(`[SonarQubeService] Using mdDesc format`);
+        htmlDesc = rule.mdDesc;
+        whyIsThisAnIssue = rule.mdDesc;
       }
 
-      if (data.task.status === "FAILED" || data.task.status === "CANCELED") {
-        throw new Error(`Analysis failed: ${data.task.errorMessage || data.task.status}`);
-      }
-
-      // Wait before polling again
-      await new Promise((resolve) => setTimeout(resolve, pollInterval));
+      return {
+        name: rule?.name || "",
+        htmlDesc,
+        whyIsThisAnIssue,
+        howToFixIt,
+        htmlNote: rule?.htmlNote,
+        remediationFnBaseEffort: rule?.remediationFnBaseEffort,
+      };
+    } catch (error) {
+      console.warn(`[SonarQubeService] Error fetching rule details for ${ruleKey}:`, error);
+      return null;
     }
+  }
 
-    throw new Error("Analysis timeout: Task did not complete within the specified time");
+  /**
+   * Build issue URL for viewing in SonarQube web interface
+   * @param issueKey Issue key
+   * @returns URL to view the issue in SonarQube
+   */
+  getIssueUrl(issueKey: string): string {
+    return `${this.config.serverUrl}/project/issues?id=${this.config.projectKey}&open=${issueKey}`;
+  }
+
+  /**
+   * Build rule URL for viewing in SonarQube web interface
+   * @param ruleKey Rule key (e.g., "typescript:S3776")
+   * @returns URL to view the rule in SonarQube
+   */
+  getRuleUrl(ruleKey: string): string {
+    const encodedRuleKey = encodeURIComponent(ruleKey);
+    return `${this.config.serverUrl}/coding_rules?open=${encodedRuleKey}&rule_key=${encodedRuleKey}`;
   }
 }
