@@ -8,7 +8,6 @@
  * - Comment collapsing (hiding previous bot comments)
  */
 
-// @ts-expect-error - Octokit types may not be fully compatible
 import { Octokit } from "@octokit/rest";
 import type {
   GitHubConfig,

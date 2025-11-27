@@ -7,7 +7,6 @@
 
 import { existsSync, readFileSync } from "fs";
 import { join } from "path";
-import scanner from "sonarqube-scanner";
 import {
   SonarQubeIssueType,
   SonarQubeMode,
@@ -165,6 +164,13 @@ export class SonarQubeService {
       logMessage(`  Project Key: ${scannerConfig.options["sonar.projectKey"]}`);
       logMessage(`  Sources: ${scannerConfig.options["sonar.sources"]}`);
       logMessage(`  Base Dir: ${scannerConfig.options["sonar.projectBaseDir"]}`);
+
+      // Dynamically import sonarqube-scanner (CommonJS module)
+      const scannerModule = await import("sonarqube-scanner");
+      const scanner = scannerModule.default as unknown as (
+        config: any,
+        callback: (error?: unknown) => void
+      ) => Promise<void>;
 
       return await new Promise<ScannerExecutionResult>((resolve, reject) => {
         const timeoutId = setTimeout(() => {
