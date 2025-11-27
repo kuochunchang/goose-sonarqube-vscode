@@ -74,7 +74,7 @@ jobs:
             exit 0
           fi
           VSIX_FILE=$(ls *.vsix | head -n 1)
-          npx @vscode/vsce publish "$VSIX_FILE" -p "$VSCE_PAT"
+          npx @vscode/vsce publish --packagePath "$VSIX_FILE" -p "$VSCE_PAT"
 
       - name: Publish to Open VSX Registry
         if: github.event_name == 'release' || github.event_name == 'push'
