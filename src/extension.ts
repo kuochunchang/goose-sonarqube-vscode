@@ -93,9 +93,8 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
       () => manageSonarQubeProjectBinding(context)
     );
 
-    const exportIssuesCmd = vscode.commands.registerCommand(
-      "gooseSonarQube.exportIssues",
-      () => exportIssues(context)
+    const exportIssuesCmd = vscode.commands.registerCommand("gooseSonarQube.exportIssues", () =>
+      exportIssues(context)
     );
 
     context.subscriptions.push(
@@ -115,7 +114,6 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     );
 
     outputChannel.appendLine("All commands registered successfully");
-
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
     console.error("Failed to activate Goose SonarQube extension:", error);
