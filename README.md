@@ -249,10 +249,6 @@ You can configure this extension from **VS Code Settings** (`Preferences → Set
 
 For development setup and contribution guidelines, see [DEVELOPMENT.md](./DEVELOPMENT.md).
 
-### Release
-
-This extension uses GitHub Actions for automated publishing to VS Code Marketplace. See [Release Guide](./.github/RELEASE.md) for details.
-
 ---
 
 ### License
