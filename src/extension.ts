@@ -11,6 +11,7 @@ import { analyzePullRequest } from "./commands/analyze-pull-request.js";
 import { analyzeWorkingDirectory } from "./commands/analyze-working-directory.js";
 import { bindSonarQubeProject } from "./commands/bind-sonarqube-project.js";
 import { diagnoseSonarQube } from "./commands/diagnose-sonarqube.js";
+import { exportIssues } from "./commands/export-issues.js";
 import { showGitAnalysisMenu } from "./commands/git-analysis-menu.js";
 import { manageSonarQubeConnections } from "./commands/manage-connections.js";
 import { manageSonarQubeProjectBinding } from "./commands/manage-project-binding.js";
@@ -92,6 +93,10 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
       () => manageSonarQubeProjectBinding(context)
     );
 
+    const exportIssuesCmd = vscode.commands.registerCommand("gooseSonarQube.exportIssues", () =>
+      exportIssues(context)
+    );
+
     context.subscriptions.push(
       analyzeWorkingDirectoryCmd,
       analyzeBranchCmd,
@@ -104,11 +109,11 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
       diagnoseSonarQubeCmd,
       analyzeProjectSonarQubeCmd,
       manageConnectionsCmd,
-      manageProjectBindingCmd
+      manageProjectBindingCmd,
+      exportIssuesCmd
     );
 
     outputChannel.appendLine("All commands registered successfully");
-    vscode.window.showInformationMessage("Goose SonarQube is ready! 🔍");
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
     console.error("Failed to activate Goose SonarQube extension:", error);
