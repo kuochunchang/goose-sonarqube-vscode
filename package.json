@@ -103,6 +103,12 @@
                 "title": "Manage Project Binding",
                 "category": "Goose SonarQube",
                 "icon": "$(project)"
+            },
+            {
+                "command": "gooseSonarQube.exportIssues",
+                "title": "Export All SonarQube Issues",
+                "category": "Goose SonarQube",
+                "icon": "$(export)"
             }
         ],
         "keybindings": [
